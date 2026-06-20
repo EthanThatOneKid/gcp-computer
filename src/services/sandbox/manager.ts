@@ -6,8 +6,8 @@ import { GCPComputeSandboxProvider } from './gcp';
 import { v4 as uuidv4 } from 'uuid';
 
 const providerType = process.env.SANDBOX_PROVIDER || 'mock'; // 'gcp' | 'docker' | 'mock'
-const timeoutMs = process.env.SANDBOX_TIMEOUT_MS 
-  ? parseInt(process.env.SANDBOX_TIMEOUT_MS) 
+const timeoutMs = process.env.SANDBOX_TIMEOUT_MS
+  ? parseInt(process.env.SANDBOX_TIMEOUT_MS)
   : 10 * 60 * 1000; // 10 mins
 
 class SandboxManager {
@@ -23,7 +23,7 @@ class SandboxManager {
     } else {
       this.provider = new MockSandboxProvider();
     }
-    
+
     // Start reaper on server start
     this.startReaper();
   }
@@ -47,13 +47,13 @@ class SandboxManager {
 
   private async reapIdleSandboxes() {
     const now = Date.now();
-    
+
     try {
       const db = getDb();
       // Find all running sandboxes
-      const runningSandboxes = db.prepare(
-        `SELECT id, last_active_at FROM sandbox_instances WHERE status = 'running'`
-      ).all() as { id: string; last_active_at: string }[];
+      const runningSandboxes = db
+        .prepare(`SELECT id, last_active_at FROM sandbox_instances WHERE status = 'running'`)
+        .all() as { id: string; last_active_at: string }[];
 
       for (const sb of runningSandboxes) {
         const lastActiveDb = new Date(sb.last_active_at + 'Z').getTime();
@@ -64,11 +64,11 @@ class SandboxManager {
           console.log(`[SandboxManager] Sandbox ${sb.id} is idle for >10 mins. Stopping...`);
           try {
             await this.provider.stopSandbox(sb.id);
-            
+
             db.prepare(
-              `UPDATE sandbox_instances SET status = 'stopped', last_active_at = ? WHERE id = ?`
+              `UPDATE sandbox_instances SET status = 'stopped', last_active_at = ? WHERE id = ?`,
             ).run(new Date().toISOString(), sb.id);
-            
+
             this.activeTimestamps.delete(sb.id);
             console.log(`[SandboxManager] Sandbox ${sb.id} hibernation complete.`);
           } catch (err) {
@@ -87,9 +87,10 @@ class SandboxManager {
 
     try {
       const db = getDb();
-      db.prepare(
-        `UPDATE sandbox_instances SET last_active_at = ? WHERE id = ?`
-      ).run(new Date().toISOString(), id);
+      db.prepare(`UPDATE sandbox_instances SET last_active_at = ? WHERE id = ?`).run(
+        new Date().toISOString(),
+        id,
+      );
     } catch (e) {
       console.error('[SandboxManager] Touch failed:', e);
     }
@@ -97,81 +98,90 @@ class SandboxManager {
 
   async getOrCreateSandboxForChat(chatId: string): Promise<SandboxStatusInfo> {
     const db = getDb();
-    
-    const sandbox = db.prepare(
-      `SELECT s.id, s.provider, s.status, s.connection_info, s.last_active_at 
+
+    const sandbox = db
+      .prepare(
+        `SELECT s.id, s.provider, s.status, s.connection_info, s.last_active_at 
        FROM sandbox_instances s
        JOIN chat_sandboxes cs ON s.id = cs.sandbox_id
-       WHERE cs.chat_id = ?`
-    ).get(chatId) as {
-      id: string;
-      provider: string;
-      status: string;
-      connection_info: string;
-      last_active_at: string;
-    } | undefined;
+       WHERE cs.chat_id = ?`,
+      )
+      .get(chatId) as
+      | {
+          id: string;
+          provider: string;
+          status: string;
+          connection_info: string;
+          last_active_at: string;
+        }
+      | undefined;
 
     let sandboxId: string;
 
     if (!sandbox) {
       sandboxId = uuidv4();
       console.log(`[SandboxManager] Provisioning new ${providerType} sandbox for chat ${chatId}`);
-      
+
       // Update DB to provisioning immediately
       const connInfo = JSON.stringify({
         createdAt: new Date().toISOString(),
-        hostWorkspace: `sandboxes/${sandboxId}`
+        hostWorkspace: `sandboxes/${sandboxId}`,
       });
 
       db.prepare(
         `INSERT INTO sandbox_instances (id, provider, status, connection_info, last_active_at)
-         VALUES (?, ?, ?, ?, ?)`
+         VALUES (?, ?, ?, ?, ?)`,
       ).run(sandboxId, providerType, 'provisioning', connInfo, new Date().toISOString());
 
-      db.prepare(
-        `INSERT INTO chat_sandboxes (chat_id, sandbox_id) VALUES (?, ?)`
-      ).run(chatId, sandboxId);
+      db.prepare(`INSERT INTO chat_sandboxes (chat_id, sandbox_id) VALUES (?, ?)`).run(
+        chatId,
+        sandboxId,
+      );
 
       // Async creation so we don't block the UI
-      this.provider.createSandbox(sandboxId).then(() => {
-        db.prepare(
-          `UPDATE sandbox_instances SET status = 'running', last_active_at = ? WHERE id = ?`
-        ).run(new Date().toISOString(), sandboxId);
-        console.log(`[SandboxManager] Sandbox ${sandboxId} running.`);
-      }).catch(err => {
-        db.prepare(
-          `UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`
-        ).run(sandboxId);
-        console.error(`[SandboxManager] Sandbox ${sandboxId} creation failed:`, err);
-      });
+      this.provider
+        .createSandbox(sandboxId)
+        .then(() => {
+          db.prepare(
+            `UPDATE sandbox_instances SET status = 'running', last_active_at = ? WHERE id = ?`,
+          ).run(new Date().toISOString(), sandboxId);
+          console.log(`[SandboxManager] Sandbox ${sandboxId} running.`);
+        })
+        .catch((err) => {
+          db.prepare(`UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`).run(sandboxId);
+          console.error(`[SandboxManager] Sandbox ${sandboxId} creation failed:`, err);
+        });
 
       return {
         id: sandboxId,
         provider: providerType as any,
         status: 'provisioning',
         mounts: [],
-        lastActive: Date.now()
+        lastActive: Date.now(),
       };
     } else {
       sandboxId = sandbox.id;
-      
+
       if (sandbox.status === 'stopped') {
         console.log(`[SandboxManager] Waking up sandbox ${sandboxId}...`);
-        
+
         db.prepare(
-          `UPDATE sandbox_instances SET status = 'provisioning', last_active_at = ? WHERE id = ?`
+          `UPDATE sandbox_instances SET status = 'provisioning', last_active_at = ? WHERE id = ?`,
         ).run(new Date().toISOString(), sandboxId);
 
-        this.provider.startSandbox(sandboxId).then(() => {
-          db.prepare(
-            `UPDATE sandbox_instances SET status = 'running', last_active_at = ? WHERE id = ?`
-          ).run(new Date().toISOString(), sandboxId);
-        }).catch(err => {
-          db.prepare(
-            `UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`
-          ).run(sandboxId);
-          console.error(`[SandboxManager] Wakeup failed for ${sandboxId}:`, err);
-        });
+        this.provider
+          .startSandbox(sandboxId)
+          .then(() => {
+            db.prepare(
+              `UPDATE sandbox_instances SET status = 'running', last_active_at = ? WHERE id = ?`,
+            ).run(new Date().toISOString(), sandboxId);
+          })
+          .catch((err) => {
+            db.prepare(`UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`).run(
+              sandboxId,
+            );
+            console.error(`[SandboxManager] Wakeup failed for ${sandboxId}:`, err);
+          });
       }
     }
 
@@ -183,7 +193,9 @@ class SandboxManager {
       mounts = (this.provider as any).getMounts(sandboxId);
     }
 
-    const ipAddress = this.provider.getIpAddress ? await this.provider.getIpAddress(sandboxId) : undefined;
+    const ipAddress = this.provider.getIpAddress
+      ? await this.provider.getIpAddress(sandboxId)
+      : undefined;
 
     return {
       id: sandboxId,
@@ -191,7 +203,7 @@ class SandboxManager {
       status: currentStatus,
       mounts,
       lastActive: this.activeTimestamps.get(sandboxId) || Date.now(),
-      ipAddress
+      ipAddress,
     };
   }
 
@@ -217,10 +229,10 @@ class SandboxManager {
 
   async getSandboxDetails(sandboxId: string): Promise<SandboxStatusInfo> {
     const db = getDb();
-    const sandbox = db.prepare(
-      `SELECT provider, status FROM sandbox_instances WHERE id = ?`
-    ).get(sandboxId) as { provider: string; status: string } | undefined;
-    
+    const sandbox = db
+      .prepare(`SELECT provider, status FROM sandbox_instances WHERE id = ?`)
+      .get(sandboxId) as { provider: string; status: string } | undefined;
+
     if (!sandbox) {
       throw new Error(`Sandbox ${sandboxId} not found`);
     }
@@ -230,7 +242,9 @@ class SandboxManager {
     if ((this.provider as any).getMounts) {
       mounts = (this.provider as any).getMounts(sandboxId);
     }
-    const ipAddress = this.provider.getIpAddress ? await this.provider.getIpAddress(sandboxId) : undefined;
+    const ipAddress = this.provider.getIpAddress
+      ? await this.provider.getIpAddress(sandboxId)
+      : undefined;
 
     return {
       id: sandboxId,
@@ -238,7 +252,7 @@ class SandboxManager {
       status: currentStatus,
       mounts,
       lastActive: this.activeTimestamps.get(sandboxId) || Date.now(),
-      ipAddress
+      ipAddress,
     };
   }
 
@@ -246,7 +260,7 @@ class SandboxManager {
     await this.provider.stopSandbox(sandboxId);
     const db = getDb();
     db.prepare(
-      `UPDATE sandbox_instances SET status = 'stopped', last_active_at = ? WHERE id = ?`
+      `UPDATE sandbox_instances SET status = 'stopped', last_active_at = ? WHERE id = ?`,
     ).run(new Date().toISOString(), sandboxId);
     this.activeTimestamps.delete(sandboxId);
   }

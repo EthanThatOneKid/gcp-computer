@@ -5,9 +5,9 @@ import { sandboxManager } from '../../src/services/sandbox/manager';
 export default defineTool({
   description: 'Creates a new file or overwrites an existing file inside the sandbox workspace.',
   inputSchema: z.object({
-    sandboxId: z.string().description('The target sandbox instance ID.'),
-    filePath: z.string().description('The target filename or path inside the workspace.'),
-    content: z.string().description('The text content to write to the file.'),
+    sandboxId: z.string().describe('The target sandbox instance ID.'),
+    filePath: z.string().describe('The target filename or path inside the workspace.'),
+    content: z.string().describe('The text content to write to the file.'),
   }),
   async execute(input) {
     try {

@@ -17,7 +17,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email) return null;
-        
+
         const db = getDb();
         const email = credentials.email.trim().toLowerCase();
         const name = credentials.name || 'Developer';
@@ -26,13 +26,15 @@ export const authOptions: NextAuthOptions = {
         try {
           // Check if user exists
           const selectStmt = db.prepare('SELECT id, email, name, image FROM users WHERE email = ?');
-          let user = selectStmt.get(email) as { id: string; email: string; name: string; image: string } | undefined;
+          let user = selectStmt.get(email) as
+            | { id: string; email: string; name: string; image: string }
+            | undefined;
 
           if (!user) {
             // Create user automatically
             const id = `user-${Math.random().toString(36).substring(2, 11)}`;
             const insertStmt = db.prepare(
-              'INSERT INTO users (id, email, name, image) VALUES (?, ?, ?, ?)'
+              'INSERT INTO users (id, email, name, image) VALUES (?, ?, ?, ?)',
             );
             insertStmt.run(id, email, name, image);
             user = { id, email, name, image };
@@ -57,7 +59,7 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === 'google') {
         const db = getDb();
         const email = user.email!;
-        
+
         try {
           const selectStmt = db.prepare('SELECT id FROM users WHERE email = ?');
           const existing = selectStmt.get(email);
@@ -65,7 +67,7 @@ export const authOptions: NextAuthOptions = {
           if (!existing) {
             const id = user.id || `user-${Math.random().toString(36).substring(2, 11)}`;
             const insertStmt = db.prepare(
-              'INSERT INTO users (id, email, name, image) VALUES (?, ?, ?, ?)'
+              'INSERT INTO users (id, email, name, image) VALUES (?, ?, ?, ?)',
             );
             insertStmt.run(id, email, user.name || 'Google User', user.image || '');
             console.log(`[Auth] Registered new Google OAuth user: ${email}`);
@@ -82,8 +84,10 @@ export const authOptions: NextAuthOptions = {
         const db = getDb();
         try {
           const selectStmt = db.prepare('SELECT id, image FROM users WHERE email = ?');
-          const dbUser = selectStmt.get(session.user.email) as { id: string; image: string } | undefined;
-          
+          const dbUser = selectStmt.get(session.user.email) as
+            | { id: string; image: string }
+            | undefined;
+
           if (dbUser && session.user) {
             (session.user as any).id = dbUser.id;
             session.user.image = dbUser.image;

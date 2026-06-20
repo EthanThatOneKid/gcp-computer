@@ -5,8 +5,8 @@ import { sandboxManager } from '../../src/services/sandbox/manager';
 export default defineTool({
   description: 'Reads the text content of a file from the sandbox workspace.',
   inputSchema: z.object({
-    sandboxId: z.string().description('The target sandbox instance ID.'),
-    filePath: z.string().description('The filename or path to read.'),
+    sandboxId: z.string().describe('The target sandbox instance ID.'),
+    filePath: z.string().describe('The filename or path to read.'),
   }),
   async execute(input) {
     try {

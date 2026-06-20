@@ -104,7 +104,10 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
         this.client = new InstancesClient();
       }
     } catch (e) {
-      console.warn('[GCP Sandbox] Failed to initialize Compute Engine client. GCP operations will fail.', e);
+      console.warn(
+        '[GCP Sandbox] Failed to initialize Compute Engine client. GCP operations will fail.',
+        e,
+      );
     }
   }
 
@@ -114,7 +117,9 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
 
   private checkGCPConfig() {
     if (!this.client || !project) {
-      throw new Error('GCP Compute Client is not configured. Add GCP_PROJECT_ID to your environment.');
+      throw new Error(
+        'GCP Compute Client is not configured. Add GCP_PROJECT_ID to your environment.',
+      );
     }
   }
 
@@ -201,7 +206,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     this.checkGCPConfig();
     const instanceName = this.getGCPName(id);
     console.log(`[GCP Sandbox] Starting VM Instance: ${instanceName}`);
-    
+
     const [operation] = await this.client!.start({
       project,
       zone,
@@ -214,7 +219,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     this.checkGCPConfig();
     const instanceName = this.getGCPName(id);
     console.log(`[GCP Sandbox] Stopping VM Instance: ${instanceName}`);
-    
+
     const [operation] = await this.client!.stop({
       project,
       zone,
@@ -228,7 +233,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     this.checkGCPConfig();
     const instanceName = this.getGCPName(id);
     console.log(`[GCP Sandbox] Deleting VM Instance: ${instanceName}`);
-    
+
     const [operation] = await this.client!.delete({
       project,
       zone,
@@ -246,12 +251,12 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     }
 
     const url = `http://${ip}:8888${endpoint}`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.sharedSecret}`,
+        Authorization: `Bearer ${this.sharedSecret}`,
       },
       body: JSON.stringify(body),
       // Set short timeouts to avoid hanging Next.js
@@ -283,9 +288,11 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
   }
 
   async mountDirectory(id: string, hostPath: string, sandboxPath: string): Promise<void> {
-    console.log(`[GCP Sandbox] Forwarding mount request to VM ${id}: ${hostPath} -> ${sandboxPath}`);
+    console.log(
+      `[GCP Sandbox] Forwarding mount request to VM ${id}: ${hostPath} -> ${sandboxPath}`,
+    );
     await this.callAgent(id, '/mount', { hostPath, sandboxPath });
-    
+
     const currentMounts = this.mounts.get(id) || [];
     currentMounts.push({ hostPath, sandboxPath });
     this.mounts.set(id, currentMounts);

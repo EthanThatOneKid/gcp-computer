@@ -10,7 +10,7 @@ export function initDb() {
     const isNew = !fs.existsSync(dbPath);
 
     db = new DatabaseSync(dbPath);
-    
+
     // Enable foreign keys
     db.exec('PRAGMA foreign_keys = ON');
 

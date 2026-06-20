@@ -45,10 +45,14 @@ export class MockSandboxProvider implements SandboxProvider {
     console.log(`[MockSandbox] Sandbox ${id} deleted`);
   }
 
-  async executeCommand(id: string, command: string, workDir: string = ''): Promise<RunCommandResult> {
+  async executeCommand(
+    id: string,
+    command: string,
+    workDir: string = '',
+  ): Promise<RunCommandResult> {
     const ws = this.getWorkspaceDir(id);
     const cwd = workDir ? path.resolve(ws, workDir) : ws;
-    
+
     if (!fs.existsSync(cwd)) {
       fs.mkdirSync(cwd, { recursive: true });
     }
@@ -60,13 +64,13 @@ export class MockSandboxProvider implements SandboxProvider {
       return {
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        exitCode: 0
+        exitCode: 0,
       };
     } catch (error: any) {
       return {
         stdout: error.stdout ? error.stdout.trim() : '',
-        stderr: error.stderr ? error.stderr.trim() : (error.message || 'Unknown error'),
-        exitCode: error.code !== undefined ? error.code : 1
+        stderr: error.stderr ? error.stderr.trim() : error.message || 'Unknown error',
+        exitCode: error.code !== undefined ? error.code : 1,
       };
     }
   }
@@ -74,7 +78,7 @@ export class MockSandboxProvider implements SandboxProvider {
   async writeFile(id: string, filePath: string, content: string): Promise<void> {
     const ws = this.getWorkspaceDir(id);
     const absolutePath = path.resolve(ws, filePath);
-    
+
     const dir = path.dirname(absolutePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -130,7 +134,7 @@ function copyFolderSync(from: string, to: string) {
   if (!fs.existsSync(to)) {
     fs.mkdirSync(to, { recursive: true });
   }
-  fs.readdirSync(from).forEach(element => {
+  fs.readdirSync(from).forEach((element) => {
     const fromPath = path.join(from, element);
     const toPath = path.join(to, element);
     if (fs.lstatSync(fromPath).isDirectory()) {

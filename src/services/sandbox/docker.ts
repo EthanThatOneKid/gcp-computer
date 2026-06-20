@@ -25,7 +25,9 @@ export class DockerSandboxProvider implements SandboxProvider {
 
   private async containerExists(name: string): Promise<boolean> {
     try {
-      const { stdout } = await execAsync(`docker ps -a --filter "name=${name}" --format "{{.Names}}"`);
+      const { stdout } = await execAsync(
+        `docker ps -a --filter "name=${name}" --format "{{.Names}}"`,
+      );
       return stdout.trim().includes(name);
     } catch {
       return false;
@@ -99,7 +101,7 @@ export class DockerSandboxProvider implements SandboxProvider {
     if (status === 'running') {
       await execAsync(`docker stop ${containerName}`);
     }
-    
+
     if (force) {
       await execAsync(`docker rm -f ${containerName}`).catch(() => {});
     }
@@ -119,7 +121,11 @@ export class DockerSandboxProvider implements SandboxProvider {
     }
   }
 
-  async executeCommand(id: string, command: string, workDir: string = ''): Promise<RunCommandResult> {
+  async executeCommand(
+    id: string,
+    command: string,
+    workDir: string = '',
+  ): Promise<RunCommandResult> {
     const containerName = `gcp-computer-sandbox-${id}`;
     await this.startSandbox(id);
 
@@ -132,14 +138,16 @@ export class DockerSandboxProvider implements SandboxProvider {
       } catch (error: any) {
         return {
           stdout: error.stdout ? error.stdout.trim() : '',
-          stderr: error.stderr ? error.stderr.trim() : (error.message || 'Unknown error'),
-          exitCode: error.code !== undefined ? error.code : 1
+          stderr: error.stderr ? error.stderr.trim() : error.message || 'Unknown error',
+          exitCode: error.code !== undefined ? error.code : 1,
         };
       }
     }
 
-    const formattedWorkDir = workDir 
-      ? (workDir.startsWith('/') ? workDir : `/workspace/${workDir}`)
+    const formattedWorkDir = workDir
+      ? workDir.startsWith('/')
+        ? workDir
+        : `/workspace/${workDir}`
       : '/workspace';
 
     const escapedCommand = command.replace(/"/g, '\\"');
@@ -150,13 +158,13 @@ export class DockerSandboxProvider implements SandboxProvider {
       return {
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        exitCode: 0
+        exitCode: 0,
       };
     } catch (error: any) {
       return {
         stdout: error.stdout ? error.stdout.trim() : '',
-        stderr: error.stderr ? error.stderr.trim() : (error.message || 'Unknown error'),
-        exitCode: error.code !== undefined ? error.code : 1
+        stderr: error.stderr ? error.stderr.trim() : error.message || 'Unknown error',
+        exitCode: error.code !== undefined ? error.code : 1,
       };
     }
   }
@@ -164,7 +172,7 @@ export class DockerSandboxProvider implements SandboxProvider {
   async writeFile(id: string, filePath: string, content: string): Promise<void> {
     const ws = this.getWorkspaceDir(id);
     const absolutePath = path.resolve(ws, filePath);
-    
+
     const dir = path.dirname(absolutePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -184,7 +192,9 @@ export class DockerSandboxProvider implements SandboxProvider {
 
   async mountDirectory(id: string, hostPath: string, sandboxPath: string): Promise<void> {
     const currentMounts = this.mounts.get(id) || [];
-    const exists = currentMounts.some(m => m.hostPath === hostPath && m.sandboxPath === sandboxPath);
+    const exists = currentMounts.some(
+      (m) => m.hostPath === hostPath && m.sandboxPath === sandboxPath,
+    );
     if (exists) return;
 
     currentMounts.push({ hostPath, sandboxPath });
@@ -194,7 +204,7 @@ export class DockerSandboxProvider implements SandboxProvider {
 
     const containerName = `gcp-computer-sandbox-${id}`;
     const status = await this.getContainerStatus(containerName);
-    
+
     if (status !== 'none') {
       await execAsync(`docker rm -f ${containerName}`).catch(() => {});
       await this.startContainer(id);
