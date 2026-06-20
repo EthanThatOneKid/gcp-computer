@@ -13,16 +13,23 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.1",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
     "next": "16.2.9",
+    "next-auth": "^4.24.14",
     "postcss": "^8.5.15",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "tailwindcss": "^4.3.1"
+    "tailwindcss": "^4.3.1",
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "prettier": "^3.8.4",
