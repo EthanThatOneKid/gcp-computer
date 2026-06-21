@@ -1,4 +1,4 @@
-# gcp-computer
+# <img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-ar21.svg" alt="Google Cloud Platform Logo" height="48" align="center"> gcp-computer
 
 A unified, secure, lightning-fast sandboxing platform for AI coding agents. Provision isolated workspaces in milliseconds, allowing agents to execute shell commands, edit files, and mount host directories safely.
 
