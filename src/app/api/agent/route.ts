@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
     const systemPrompt = `${baseInstructions}\n\nYou are currently connected to Sandbox ID: "${sandboxId}".`;
 
     const result = await streamText({
-      model: google('gemini-2.0-flash'),
+      model: google('gemini-2.5-flash'),
       system: systemPrompt,
       messages: messages.map((m: IncomingMessage) => ({
         role: m.role,
