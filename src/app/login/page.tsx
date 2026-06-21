@@ -5,6 +5,8 @@ import { getRuntimeConfig } from '@/config/runtime';
 import LoginForm from '@/components/LoginForm';
 import { Terminal } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function LoginPage() {
   const runtime = getRuntimeConfig();
   const session = await getServerSession(authOptions);
