@@ -1,43 +1,144 @@
-import { DatabaseSync } from 'node:sqlite';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
+import { Pool, type PoolClient, type QueryResultRow } from 'pg';
 
-let db: DatabaseSync | null = null;
+type QueryParams = readonly unknown[];
 
-export function initDb() {
-  try {
-    const dbPath = path.join(process.cwd(), 'database.db');
-    const isNew = !fs.existsSync(dbPath);
+let pool: Pool | null = null;
+let readyPromise: Promise<void> | null = null;
 
-    db = new DatabaseSync(dbPath);
+function getDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL;
 
-    // Enable foreign keys
-    db.exec('PRAGMA foreign_keys = ON');
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required for Postgres access.');
+  }
 
-    // Run schema migrations
-    // Find schema.sql: since Next.js transpiles, it might look in different folders
-    // We try src/db/schema.sql and fallback to root-level schema.sql if copied
-    let schemaPath = path.join(process.cwd(), 'src/db/schema.sql');
-    if (!fs.existsSync(schemaPath)) {
-      schemaPath = path.join(process.cwd(), 'db/schema.sql');
-    }
+  return databaseUrl;
+}
 
-    if (fs.existsSync(schemaPath)) {
-      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-      db.exec(schemaSql);
-      console.log('[DB] Database initialized and schema applied successfully.');
-    } else {
-      console.warn('[DB] schema.sql not found at', schemaPath);
-    }
-  } catch (error) {
-    console.error('[DB] Failed to initialize database:', error);
-    process.exit(1);
+function createPool() {
+  if (pool) {
+    return pool;
+  }
+
+  const connectionString = getDatabaseUrl();
+  const hostname = new URL(connectionString).hostname;
+  const useSsl = !['localhost', '127.0.0.1', '::1'].includes(hostname);
+
+  pool = new Pool({
+    connectionString,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+  });
+
+  return pool;
+}
+
+function toPgSql(sql: string) {
+  let index = 1;
+  return sql.replace(/\?/g, () => `$${index++}`);
+}
+
+async function ensureReady() {
+  if (!readyPromise) {
+    readyPromise = (async () => {
+      const activePool = createPool();
+      await activePool.query('SELECT 1');
+
+      await activePool.query(`
+        CREATE TABLE IF NOT EXISTS _migrations (
+          name TEXT PRIMARY KEY,
+          applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+
+      const migrationsDir = path.join(process.cwd(), 'src/db/migrations');
+      const files = (await fs.readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
+
+      for (const file of files) {
+        const applied = await activePool.query('SELECT 1 FROM _migrations WHERE name = $1', [file]);
+        if (applied.rowCount) {
+          continue;
+        }
+
+        const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf8');
+        const client = await activePool.connect();
+
+        try {
+          await client.query('BEGIN');
+          await client.query(migrationSql);
+          await client.query('INSERT INTO _migrations (name) VALUES ($1)', [file]);
+          await client.query('COMMIT');
+        } catch (error) {
+          await client.query('ROLLBACK');
+          throw error;
+        } finally {
+          client.release();
+        }
+      }
+    })().catch((error) => {
+      readyPromise = null;
+      throw error;
+    });
+  }
+
+  return readyPromise;
+}
+
+async function query<T extends QueryResultRow = QueryResultRow>(sql: string, params: QueryParams = []) {
+  await ensureReady();
+  return await createPool().query<T>(toPgSql(sql), params as unknown[]);
+}
+
+class PgPreparedStatement {
+  constructor(private readonly sql: string) {}
+
+  async get<T extends QueryResultRow = QueryResultRow>(...params: unknown[]) {
+    const result = await query<T>(this.sql, params);
+    return result.rows[0];
+  }
+
+  async all<T extends QueryResultRow = QueryResultRow>(...params: unknown[]) {
+    const result = await query<T>(this.sql, params);
+    return result.rows;
+  }
+
+  async run(...params: unknown[]) {
+    const result = await query(this.sql, params);
+    return { changes: result.rowCount ?? 0 };
   }
 }
 
-export function getDb(): DatabaseSync {
-  if (!db) {
-    initDb();
+class PgDatabaseFacade {
+  prepare(sql: string) {
+    return new PgPreparedStatement(sql);
   }
-  return db!;
+
+  async exec(sql: string) {
+    await ensureReady();
+    await createPool().query(sql);
+  }
+}
+
+const db = new PgDatabaseFacade();
+
+export function getDb() {
+  return db;
+}
+
+export async function transaction<T>(fn: (client: PoolClient) => Promise<T>) {
+  await ensureReady();
+  const client = await createPool().connect();
+
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }

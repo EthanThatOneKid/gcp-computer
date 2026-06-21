@@ -1,7 +1,7 @@
 import React from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import { authOptions } from '../../../api/auth/[...nextauth]/route';
+import { authOptions } from '@/auth';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
 import ChatWindowClient from '@/components/ChatWindowClient';
@@ -40,7 +40,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const db = getDb();
 
   // Load chat and messages SSR
-  const chat = db
+  const chat = await db
     .prepare('SELECT id, title FROM chats WHERE id = ? AND user_id = ?')
     .get(chatId, userId) as { id: string; title: string } | undefined;
 
@@ -48,7 +48,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
     redirect('/dashboard');
   }
 
-  const messages = db
+  const messages = await db
     .prepare(
       'SELECT id, sender, content, tool_calls, created_at FROM messages WHERE chat_id = ? ORDER BY created_at ASC',
     )

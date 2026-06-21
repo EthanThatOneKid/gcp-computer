@@ -63,16 +63,24 @@ This project was built for the **GDG Newport Beach Google I/O Extended Hackathon
 2. **Environment Variables:**
    Create a `.env` file in the root directory:
    ```env
-   # Gemini API Credentials (required for AI features)
-   GEMINI_API_KEY=your-gemini-api-key
+    # Gemini API Credentials (required for AI features)
+    GEMINI_API_KEY=your-gemini-api-key
 
-   # NextAuth Options
-   NEXTAUTH_SECRET=a-secure-random-secret
-   NEXTAUTH_URL=http://localhost:3000
+    # Postgres for production/demo
+    DATABASE_URL=postgresql://...
 
-   # Developer Mock Credentials Auth Fallback (enabled by default)
-   ALLOW_MOCK_AUTH=true
-   ```
+    # NextAuth Options
+    NEXTAUTH_SECRET=a-secure-random-secret
+    NEXTAUTH_URL=http://localhost:3000
+
+    # Developer Mock Credentials Auth Fallback (enabled by default)
+    ALLOW_MOCK_AUTH=true
+    SANDBOX_PROVIDER=mock
+
+    # Optional Google sign-in
+    GOOGLE_CLIENT_ID=your-google-client-id
+    GOOGLE_CLIENT_SECRET=your-google-client-secret
+    ```
 3. **Start the Development Server:**
    ```bash
    npm run dev

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/auth';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
 
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const db = getDb();
 
   try {
-    const chat = db
+    const chat = await db
       .prepare('SELECT id, title FROM chats WHERE id = ? AND user_id = ?')
       .get(chatId, userId) as { id: string; title: string } | undefined;
 
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
     }
 
-    const messages = db
+    const messages = await db
       .prepare(
         'SELECT id, sender, content, tool_calls, created_at FROM messages WHERE chat_id = ? ORDER BY created_at ASC',
       )
@@ -59,7 +59,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const db = getDb();
 
   try {
-    const chat = db
+    const chat = await db
       .prepare('SELECT id FROM chats WHERE id = ? AND user_id = ?')
       .get(chatId, userId);
 
@@ -67,24 +67,22 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
     }
 
-    const links = db
+    const links = await db
       .prepare('SELECT sandbox_id FROM chat_sandboxes WHERE chat_id = ?')
       .all(chatId) as { sandbox_id: string }[];
 
     // Delete chat (cascades to messages and chat_sandboxes)
-    db.prepare('DELETE FROM chats WHERE id = ?').run(chatId);
+    await db.prepare('DELETE FROM chats WHERE id = ?').run(chatId);
 
     // Clean up sandboxes
     for (const link of links) {
-      const activeCount = (
-        db
-          .prepare('SELECT COUNT(*) as count FROM chat_sandboxes WHERE sandbox_id = ?')
-          .get(link.sandbox_id) as any
-      ).count;
+      const activeCount = ((await db
+        .prepare('SELECT COUNT(*) as count FROM chat_sandboxes WHERE sandbox_id = ?')
+        .get(link.sandbox_id)) as any).count;
 
       if (activeCount === 0) {
         await sandboxManager.stopSandbox(link.sandbox_id);
-        db.prepare('DELETE FROM sandbox_instances WHERE id = ?').run(link.sandbox_id);
+        await db.prepare('DELETE FROM sandbox_instances WHERE id = ?').run(link.sandbox_id);
       }
     }
 

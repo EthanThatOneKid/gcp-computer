@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/auth';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
 import { streamText, tool, toUIMessageStream, createUIMessageStreamResponse, isStepCount } from 'ai';
@@ -37,25 +37,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const db = getDb();
+    const db = getDb();
 
-  try {
-    // 2. Verify chat ownership
-    const chat = db
-      .prepare('SELECT id FROM chats WHERE id = ? AND user_id = ?')
-      .get(chatId, userId);
-    if (!chat) {
-      return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 403 });
-    }
+    try {
+      // 2. Verify chat ownership
+      const chat = await db
+        .prepare('SELECT id FROM chats WHERE id = ? AND user_id = ?')
+        .get(chatId, userId);
+      if (!chat) {
+        return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 403 });
+      }
 
-    // 3. Save latest user message to DB
-    const latestUserMessage = messages[messages.length - 1];
-    if (latestUserMessage && latestUserMessage.role === 'user') {
-      const userMsgId = uuidv4();
-      db.prepare(
-        'INSERT INTO messages (id, chat_id, sender, content, created_at) VALUES (?, ?, ?, ?, ?)',
-      ).run(userMsgId, chatId, 'user', latestUserMessage.content, new Date().toISOString());
-    }
+      // 3. Save latest user message to DB
+      const latestUserMessage = messages[messages.length - 1];
+      if (latestUserMessage && latestUserMessage.role === 'user') {
+        const userMsgId = uuidv4();
+        await db.prepare(
+          'INSERT INTO messages (id, chat_id, sender, content, created_at) VALUES (?, ?, ?, ?, ?)',
+        ).run(userMsgId, chatId, 'user', latestUserMessage.content, new Date().toISOString());
+      }
 
     // 4. Stream AI response with tools calling loop
     const systemPrompt = `You are an agent with access to a secure sandboxed development environment. 
@@ -128,7 +128,7 @@ Format command outputs or file listings nicely in markdown. Always explain what 
           },
         }),
       },
-      onFinish: ({ text, toolResults }) => {
+      onFinish: async ({ text, toolResults }) => {
         try {
           const agentMsgId = uuidv4();
 
@@ -139,7 +139,7 @@ Format command outputs or file listings nicely in markdown. Always explain what 
             output: t.output || { success: true },
           }));
 
-          db.prepare(
+          await db.prepare(
             'INSERT INTO messages (id, chat_id, sender, content, tool_calls, created_at) VALUES (?, ?, ?, ?, ?, ?)',
           ).run(
             agentMsgId,

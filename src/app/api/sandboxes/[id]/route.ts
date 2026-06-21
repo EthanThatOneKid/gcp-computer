@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/auth';
 import { sandboxManager } from '@/services/sandbox/manager';
 import { getDb } from '@/db/index';
 
@@ -8,7 +8,7 @@ import { getDb } from '@/db/index';
 async function verifySandboxOwnership(sandboxId: string, userId: string): Promise<boolean> {
   const db = getDb();
   try {
-    const result = db
+    const result = await db
       .prepare(
         `SELECT c.user_id 
        FROM chats c
