@@ -1,5 +1,7 @@
 # Plan: Migrate SQLite → PostgreSQL on GCP Free Tier
 
+Superseded by the current Vercel + Neon deployment path. See [docs/vercel-deployment-guide.md](vercel-deployment-guide.md).
+
 ## Goal
 
 Move the local SQLite database to PostgreSQL on a GCP e2-micro VM (always free tier), and deploy the Next.js app on the same VM behind Caddy with automatic HTTPS.
