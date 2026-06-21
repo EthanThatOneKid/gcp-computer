@@ -1,6 +1,6 @@
 # Plan: Migrate SQLite → PostgreSQL on GCP Free Tier
 
-Superseded by the current Vercel + Neon deployment path. See [docs/vercel-deployment-guide.md](vercel-deployment-guide.md).
+This document details the plan to migrate from SQLite to PostgreSQL on the GCP VM.
 
 ## Goal
 

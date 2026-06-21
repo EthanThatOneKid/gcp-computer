@@ -22,6 +22,6 @@ export function getRuntimeConfig(): RuntimeConfig {
     googleAuthEnabled:
       !isLocalEmulation &&
       Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-    geminiEnabled: !isLocalEmulation && Boolean(process.env.GEMINI_API_KEY),
+    geminiEnabled: !isLocalEmulation && Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY),
   };
 }

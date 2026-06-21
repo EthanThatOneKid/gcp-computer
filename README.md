@@ -94,7 +94,6 @@ This project was built for the **GDG Newport Beach Google I/O Extended Hackathon
   - VM Provisioning Script: [scripts/vm-setup.sh](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/scripts/vm-setup.sh)
   - Deployment Script: [scripts/vm-deploy.sh](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/scripts/vm-deploy.sh)
   - GitHub Actions Workflow: [.github/workflows/deploy.yml](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/.github/workflows/deploy.yml)
-- Legacy Vercel guide: [docs/vercel-deployment-guide.md](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/docs/vercel-deployment-guide.md)
 
 Smoke test checklist: [docs/local-emulation-checklist.md](docs/local-emulation-checklist.md)
 

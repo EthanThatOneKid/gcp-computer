@@ -21,7 +21,7 @@ import * as readFileTool from '../../../../agent/tools/read_file';
 import * as mountDirectoryTool from '../../../../agent/tools/mount_directory';
 
 const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
 });
 
 interface SessionUser {
