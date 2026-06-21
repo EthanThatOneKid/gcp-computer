@@ -96,6 +96,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
   private client: InstancesClient | null = null;
   private mounts: Map<string, SandboxMount[]> = new Map();
   private cacheIp: Map<string, string> = new Map();
+  private readySandboxes: Set<string> = new Set();
   private sharedSecret = process.env.AGENT_SECRET || 'gcp-computer-secret-token';
 
   constructor() {
@@ -182,6 +183,9 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
             ],
           },
         ],
+        tags: {
+          items: ['sandbox-agent'],
+        },
         metadata: {
           items: [
             {
@@ -227,6 +231,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     });
     await operation.promise();
     this.cacheIp.delete(id);
+    this.readySandboxes.delete(id);
   }
 
   async deleteSandbox(id: string): Promise<void> {
@@ -242,6 +247,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     await operation.promise();
     this.mounts.delete(id);
     this.cacheIp.delete(id);
+    this.readySandboxes.delete(id);
   }
 
   private async callAgent(
@@ -305,6 +311,10 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
   async getSandboxStatus(id: string): Promise<'provisioning' | 'running' | 'stopped' | 'failed'> {
     if (!this.client || !project) return 'running'; // Mock fallback for compilation/development
 
+    if (this.readySandboxes.has(id)) {
+      return 'running';
+    }
+
     const instanceName = this.getGCPName(id);
     try {
       const [instance] = await this.client.get({
@@ -314,7 +324,27 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
       });
 
       const status = instance.status;
-      if (status === 'RUNNING') return 'running';
+      if (status === 'RUNNING') {
+        const publicIp = instance.networkInterfaces?.[0]?.accessConfigs?.[0]?.natIP;
+        if (!publicIp) {
+          return 'provisioning';
+        }
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1500);
+          await fetch(`http://${publicIp}:8888/`, {
+            method: 'GET',
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          this.readySandboxes.add(id);
+          return 'running';
+        } catch {
+          console.log(`[GCP Sandbox] Agent at ${publicIp}:8888 is not reachable yet.`);
+          return 'provisioning';
+        }
+      }
       if (status === 'PROVISIONING' || status === 'STAGING') return 'provisioning';
       if (status === 'TERMINATED' || status === 'STOPPING') return 'stopped';
       return 'stopped';

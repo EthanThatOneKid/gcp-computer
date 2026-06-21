@@ -118,7 +118,7 @@ class SandboxManager {
         console.log(`[SandboxManager] Waking up sandbox ${sandboxId}...`);
         await this.provider.startSandbox(sandboxId);
 
-        // Fetch IP address and update DB with 'running' status and cached IP address
+        // Fetch IP address and update DB with cached IP address
         const ipAddress = this.provider.getIpAddress
           ? await this.provider.getIpAddress(sandboxId)
           : undefined;
@@ -137,6 +137,22 @@ class SandboxManager {
         }
         if (ipAddress) {
           connInfo.ipAddress = ipAddress;
+        }
+
+        // Wait/poll until the agent is actually responsive
+        let retries = 30; // 30 * 5s = 150s (2.5 minutes)
+        let status = 'provisioning';
+        while (retries > 0) {
+          status = await this.provider.getSandboxStatus(sandboxId);
+          if (status === 'running' || status === 'failed' || status === 'stopped') {
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          retries--;
+        }
+
+        if (status !== 'running') {
+          throw new Error('Sandbox VM started but agent was unreachable.');
         }
 
         await db
@@ -267,6 +283,23 @@ class SandboxManager {
               : undefined;
 
             const updatedConnObj = { ...connInfoObj, ipAddress };
+
+            // Wait/poll until the agent is actually responsive
+            let retries = 30; // 30 * 5s = 150s (2.5 minutes)
+            let status = 'provisioning';
+            while (retries > 0) {
+              status = await this.provider.getSandboxStatus(sandboxId);
+              if (status === 'running' || status === 'failed' || status === 'stopped') {
+                break;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 5000));
+              retries--;
+            }
+
+            if (status !== 'running') {
+              throw new Error('Sandbox VM created but agent was unreachable.');
+            }
+
             await db
               .prepare(
                 `UPDATE sandbox_instances SET status = 'running', connection_info = ?, last_active_at = ? WHERE id = ?`,
