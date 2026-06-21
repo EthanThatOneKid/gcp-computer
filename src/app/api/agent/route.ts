@@ -12,8 +12,13 @@ import {
   isStepCount,
 } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
+import * as executeCommandTool from '../../../../agent/tools/execute_command';
+import * as writeFileTool from '../../../../agent/tools/write_file';
+import * as readFileTool from '../../../../agent/tools/read_file';
+import * as mountDirectoryTool from '../../../../agent/tools/mount_directory';
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
@@ -256,11 +261,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Stream AI response with tools calling loop
-    const systemPrompt = `You are an agent with access to a secure sandboxed development environment. 
-You can run shell commands, create or write files, read files, and mount host directories.
-You are currently connected to Sandbox ID: "${sandboxId}".
-Use the provided tools to run commands, edit files, and check execution outputs before finishing.
-Format command outputs or file listings nicely in markdown. Always explain what you did and summarize command results.`;
+    const instructionsPath = path.join(process.cwd(), 'agent/instructions.md');
+    const baseInstructions = fs.readFileSync(instructionsPath, 'utf-8');
+    const systemPrompt = `${baseInstructions}\n\nYou are currently connected to Sandbox ID: "${sandboxId}".`;
 
     const result = await streamText({
       model: google('gemini-2.0-flash'),
@@ -272,57 +275,35 @@ Format command outputs or file listings nicely in markdown. Always explain what 
       stopWhen: isStepCount(10), // Multi-turn tool calling
       tools: {
         execute_command: tool({
-          description:
-            'Run any shell command inside the secure Linux sandbox. Returns stdout, stderr, and exit code.',
-          inputSchema: z.object({
-            command: z.string().describe('The bash/shell command to execute.'),
-            workDir: z
-              .string()
-              .optional()
-              .describe('Optional working directory path (relative to /workspace).'),
-          }),
-          execute: async ({ command, workDir }: { command: string; workDir?: string }) => {
-            console.log(`[EVE Tool] execute_command: "${command}"`);
-            return await sandboxManager.executeCommand(sandboxId, command, workDir);
+          description: executeCommandTool.description,
+          inputSchema: executeCommandTool.schema,
+          execute: async (input) => {
+            console.log(`[EVE Tool] execute_command: "${input.command}"`);
+            return await executeCommandTool.run(sandboxId, input);
           },
         }),
         write_file: tool({
-          description:
-            'Creates a new file or overwrites an existing file inside the sandbox workspace.',
-          inputSchema: z.object({
-            filePath: z.string().describe('The target filename or path inside the workspace.'),
-            content: z.string().describe('The text content to write to the file.'),
-          }),
-          execute: async ({ filePath, content }: { filePath: string; content: string }) => {
-            console.log(`[EVE Tool] write_file: ${filePath}`);
-            await sandboxManager.writeFile(sandboxId, filePath, content);
-            return { success: true, message: `Successfully wrote file to ${filePath}` };
+          description: writeFileTool.description,
+          inputSchema: writeFileTool.schema,
+          execute: async (input) => {
+            console.log(`[EVE Tool] write_file: ${input.filePath}`);
+            return await writeFileTool.run(sandboxId, input);
           },
         }),
         read_file: tool({
-          description: 'Reads the text content of a file from the sandbox workspace.',
-          inputSchema: z.object({
-            filePath: z.string().describe('The filename or path to read.'),
-          }),
-          execute: async ({ filePath }: { filePath: string }) => {
-            console.log(`[EVE Tool] read_file: ${filePath}`);
-            const content = await sandboxManager.readFile(sandboxId, filePath);
-            return { success: true, content };
+          description: readFileTool.description,
+          inputSchema: readFileTool.schema,
+          execute: async (input) => {
+            console.log(`[EVE Tool] read_file: ${input.filePath}`);
+            return await readFileTool.run(sandboxId, input);
           },
         }),
         mount_directory: tool({
-          description:
-            'Simulates or performs mounting a host directory path to a sandbox mount point path.',
-          inputSchema: z.object({
-            hostPath: z.string().describe('The physical host machine directory path.'),
-            sandboxPath: z
-              .string()
-              .describe('The mount target path inside the sandbox container (e.g. /mnt/data).'),
-          }),
-          execute: async ({ hostPath, sandboxPath }: { hostPath: string; sandboxPath: string }) => {
-            console.log(`[EVE Tool] mount_directory: ${hostPath} -> ${sandboxPath}`);
-            await sandboxManager.mountDirectory(sandboxId, hostPath, sandboxPath);
-            return { success: true, message: `Successfully mounted ${hostPath} to ${sandboxPath}` };
+          description: mountDirectoryTool.description,
+          inputSchema: mountDirectoryTool.schema,
+          execute: async (input) => {
+            console.log(`[EVE Tool] mount_directory: ${input.hostPath} -> ${input.sandboxPath}`);
+            return await mountDirectoryTool.run(sandboxId, input);
           },
         }),
       },
