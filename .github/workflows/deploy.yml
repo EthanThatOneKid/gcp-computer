@@ -52,7 +52,7 @@ jobs:
           cat << 'EOF' > .env
           DATABASE_URL="postgresql://gcp_computer:gcp-computer-secure-pass@localhost:5432/gcp_computer"
           NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
-          NEXTAUTH_URL="http://8.229.141.54"
+          NEXTAUTH_URL="https://gcp-computer.etok.me"
           GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
           GOOGLE_GENERATIVE_AI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
           GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"

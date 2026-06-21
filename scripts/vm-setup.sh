@@ -32,7 +32,7 @@ sudo apt-get install -y caddy
 # 6. Configure Caddyfile
 echo "Configuring Caddy..."
 sudo tee /etc/caddy/Caddyfile > /dev/null <<EOF
-:80 {
+gcp-computer.etok.me {
     reverse_proxy localhost:3000
 }
 EOF

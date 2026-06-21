@@ -25,7 +25,7 @@ sudo sed -i '/^NEXTAUTH_URL=/d' /opt/gcp-computer/.env || true
 
 # Append VM specific database and URL values
 echo 'DATABASE_URL="postgresql://gcp_computer:gcp-computer-secure-pass@localhost:5432/gcp_computer"' | sudo tee -a /opt/gcp-computer/.env > /dev/null
-echo 'NEXTAUTH_URL="http://8.229.141.54"' | sudo tee -a /opt/gcp-computer/.env > /dev/null
+echo 'NEXTAUTH_URL="https://gcp-computer.etok.me"' | sudo tee -a /opt/gcp-computer/.env > /dev/null
 
 sudo chmod 600 /opt/gcp-computer/.env
 sudo chown ubuntu:ubuntu /opt/gcp-computer/.env
