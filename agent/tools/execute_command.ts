@@ -12,11 +12,7 @@ export const schema = z.object({
 
 export async function run(sandboxId: string, input: z.infer<typeof schema>) {
   try {
-    const result = await sandboxManager.executeCommand(
-      sandboxId,
-      input.command,
-      input.workDir,
-    );
+    const result = await sandboxManager.executeCommand(sandboxId, input.command, input.workDir);
     return result;
   } catch (error) {
     return {

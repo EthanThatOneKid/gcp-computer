@@ -70,12 +70,12 @@ Add the secrets to your GitHub repository so the deployment workflow can access 
 1. In your GitHub repository, navigate to **Settings** > **Secrets and variables** > **Actions**.
 2. Click **New Repository Secret** and add the following:
 
-| Secret Name                                          | Description                                                         | Example / Format                     |
-| :--------------------------------------------------- | :------------------------------------------------------------------ | :----------------------------------- |
-| `GCP_SA_KEY`                                         | The entire content of the downloaded service account JSON key file. | `{ "type": "service_account", ... }` |
-| `GCP_PROJECT_ID`                                     | Your GCP Project ID.                                                | `gcp-computer-dev`                   |
-| `NEXTAUTH_SECRET`                                    | A secure random key for signing NextAuth JWT sessions.              | A 32+ character random string        |
-| `NEXTAUTH_URL`                                       | The URL of your deployed app.                                       | `https://gcp-computer.vercel.app`    |
+| Secret Name                    | Description                                                         | Example / Format                     |
+| :----------------------------- | :------------------------------------------------------------------ | :----------------------------------- |
+| `GCP_SA_KEY`                   | The entire content of the downloaded service account JSON key file. | `{ "type": "service_account", ... }` |
+| `GCP_PROJECT_ID`               | Your GCP Project ID.                                                | `gcp-computer-dev`                   |
+| `NEXTAUTH_SECRET`              | A secure random key for signing NextAuth JWT sessions.              | A 32+ character random string        |
+| `NEXTAUTH_URL`                 | The URL of your deployed app.                                       | `https://gcp-computer.vercel.app`    |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Your Google Gemini API Key.                                         | `AIzaSy...`                          |
 
 ---
