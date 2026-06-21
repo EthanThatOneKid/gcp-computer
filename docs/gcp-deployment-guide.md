@@ -76,7 +76,7 @@ Add the secrets to your GitHub repository so the deployment workflow can access 
 | `GCP_PROJECT_ID` | Your GCP Project ID. | `gcp-computer-dev` |
 | `NEXTAUTH_SECRET` | A secure random key for signing NextAuth JWT sessions. | A 32+ character random string |
 | `NEXTAUTH_URL` | The URL of your deployed app. | `https://gcp-computer.vercel.app` |
-| `GEMINI_API_KEY` | Your Google Gemini API Key. | `AIzaSy...` |
+| `GEMINI_API_KEY` (or `GOOGLE_GENERATIVE_AI_API_KEY`) | Your Google Gemini API Key. | `AIzaSy...` |
 
 ---
 

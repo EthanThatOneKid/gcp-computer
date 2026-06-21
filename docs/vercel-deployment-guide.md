@@ -11,7 +11,7 @@ Live demo: `https://gcp-computer.vercel.app/`
   - `DATABASE_URL`
   - `NEXTAUTH_SECRET`
   - `NEXTAUTH_URL`
-  - `GEMINI_API_KEY`
+  - `GEMINI_API_KEY` (or `GOOGLE_GENERATIVE_AI_API_KEY`)
   - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` if you want Google login
 
 ## Step 1: Create the Vercel Project
