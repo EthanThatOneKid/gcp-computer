@@ -13,7 +13,7 @@ The platform is designed around a modular, unified structure:
 ```mermaid
 graph TD
     A[Next.js App Router Frontend] -->|API Requests & SSE Stream| B[API Route Handlers]
-    B -->|NextAuth / SQLite| C[SQLite Database]
+        B -->|NextAuth / Postgres| C[Neon Postgres]
     B -->|Vercel EVE Agent Core| D[Agent Tool Executor]
     D -->|Custom Sandbox Driver| E[Sandbox Manager]
     E -->|Docker Driver| F[Local Docker Containers]
@@ -24,7 +24,7 @@ graph TD
 ### Components
 1. **Next.js App Router Frontend:** A premium dark-mode developer dashboard with glassmorphism layout, collapsible left sidebar (chat history), center stage agent chat terminal (with live nested tool execution logs), and a right panel to manage volume mounts and execute commands directly in the sandbox.
 2. **Vercel EVE Agent Core:** Handles multi-turn tool calling (using AI SDK v7 `stopWhen` stop conditions) and resolves reasoning loops.
-3. **Database Layer:** Uses Node 22's native `node:sqlite` for lightweight database tracking of sessions, chats, and messages with zero binary compilation overhead.
+3. **Database Layer:** Uses Postgres for sessions, chats, and messages.
 4. **Sandbox Manager:** Implements inactivity reapers (hibernates environments after 10 minutes of idle time) and manages sandbox lifecycles.
 5. **Sandbox Drivers:**
    * **Docker Driver:** Spawns lightweight Alpine containers and dynamically handles mounting requests.
@@ -53,7 +53,7 @@ This project was built for the **GDG Newport Beach Google I/O Extended Hackathon
 
 ### Prerequisites
 - **Node.js (v22+)** and **npm**
-- **Docker** (Optional - falls back to Mock Driver if unavailable)
+- **Docker** (Optional - only needed for the Docker sandbox driver)
 
 ### Running the App
 1. **Install Dependencies:**
@@ -61,42 +61,35 @@ This project was built for the **GDG Newport Beach Google I/O Extended Hackathon
    npm install
    ```
 2. **Environment Variables:**
-   Create a `.env` file in the root directory:
+   Copy `.env.example` to `.env` and set local emulation mode:
    ```env
-    # Gemini API Credentials (required for AI features)
-    GEMINI_API_KEY=your-gemini-api-key
-
-    # Postgres for production/demo
-    DATABASE_URL=postgresql://...
-
-    # NextAuth Options
-    NEXTAUTH_SECRET=a-secure-random-secret
-    NEXTAUTH_URL=http://localhost:3000
-
-    # Developer Mock Credentials Auth Fallback (enabled by default)
-    ALLOW_MOCK_AUTH=true
-    SANDBOX_PROVIDER=mock
-
-    # Optional Google sign-in
-    GOOGLE_CLIENT_ID=your-google-client-id
-    GOOGLE_CLIENT_SECRET=your-google-client-secret
-    ```
+   APP_MODE=local-emulated
+   NEXTAUTH_SECRET=a-secure-random-secret
+   NEXTAUTH_URL=http://localhost:3000
+   ```
 3. **Start the Development Server:**
    ```bash
    npm run dev
    ```
 4. Open [http://localhost:3000](http://localhost:3000) to view the application.
 
+### Local Emulation Demo
+- Google login is hidden.
+- Credentials login works without Google Cloud setup.
+- Sandboxes run in the in-memory emulator instead of the host OS.
+- The agent falls back to a deterministic demo response when Gemini is unavailable.
+
+### Live Demo
+- https://gcp-computer.vercel.app/
+
+### Deploying
+- Vercel guide: [docs/vercel-deployment-guide.md](docs/vercel-deployment-guide.md)
+- Legacy GCP guide: [docs/gcp-deployment-guide.md](docs/gcp-deployment-guide.md)
+
+Smoke test checklist: [docs/local-emulation-checklist.md](docs/local-emulation-checklist.md)
+
 ---
 
-## Architectural Proposal: Vercel Emulate & just-bash
+## Local Emulation Mode
 
-To optimize local development loops and remove dependency bottlenecks (such as needing real GCP accounts or local Docker installation), we propose integrating the following:
-
-### 1. Google OAuth Emulation with `vercel-labs/emulate`
-- **Use Case:** Stateful, production-fidelity mock of Google Authentication APIs.
-- **Benefit:** Allows developers to test full OAuth redirection and session creation loops locally and in CI environments without needing to configure Google Cloud Console OAuth consent screens or maintain credentials.
-
-### 2. In-Memory Sandboxing with `vercel-labs/just-bash`
-- **Use Case:** A fully sandboxed Bash interpreter written in TypeScript running in an in-memory virtual filesystem.
-- **Benefit:** Instead of using the `MockSandboxProvider` (which executes commands on the developer's physical host machine using subprocesses), `just-bash` can execute shell utilities (`ls`, `cat`, `grep`, `awk`) inside a secure, JavaScript-isolated virtual space. This enables secure local sandboxing on machines without Docker.
+Set `APP_MODE=local-emulated` to enable the localhost fallback path. In this mode the app uses developer credentials auth, the emulated sandbox provider, and the deterministic agent fallback.

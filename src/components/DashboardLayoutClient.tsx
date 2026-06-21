@@ -16,12 +16,14 @@ interface ChatItem {
 interface DashboardLayoutClientProps {
   initialChats: ChatItem[];
   userEmail: string;
+  isLocalEmulation: boolean;
   children: React.ReactNode;
 }
 
 export default function DashboardLayoutClient({
   initialChats,
   userEmail,
+  isLocalEmulation,
   children,
 }: DashboardLayoutClientProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -116,6 +118,12 @@ export default function DashboardLayoutClient({
             <Menu size={16} />
           </button>
         </div>
+
+        {isLocalEmulation && !collapsed && (
+          <div className="mx-3 mt-3 rounded-[var(--radius-md)] border border-[rgba(210,190,255,0.18)] bg-[rgba(210,190,255,0.08)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-lavender)]">
+            Local Emulation
+          </div>
+        )}
 
         {/* Action Button */}
         <button

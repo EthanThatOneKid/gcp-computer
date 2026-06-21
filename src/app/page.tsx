@@ -1,10 +1,12 @@
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/auth';
+import { getRuntimeConfig } from '@/config/runtime';
 import LoginForm from '@/components/LoginForm';
 import { Terminal } from 'lucide-react';
 
 export default async function LoginPage() {
+  const runtime = getRuntimeConfig();
   // SSR check: redirect if already authenticated
   const session = await getServerSession(authOptions);
   if (session) {
@@ -15,6 +17,13 @@ export default async function LoginPage() {
     <main className="gcp-page flex min-h-screen items-center justify-center px-4 py-12">
       <section className="gcp-card-light w-full max-w-md space-y-8 p-8 sm:p-10">
         <div className="space-y-4 text-center">
+          {runtime.isLocalEmulation && (
+            <div className="flex justify-center">
+              <span className="gcp-badge-primary rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em]">
+                Local Emulation
+              </span>
+            </div>
+          )}
           <div className="flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-lavender)] text-[var(--color-deep-black)] shadow-[var(--shadow-ground)]">
               <Terminal size={30} />
@@ -33,7 +42,7 @@ export default async function LoginPage() {
           </div>
         </div>
 
-        <LoginForm />
+        <LoginForm showGoogleLogin={runtime.googleAuthEnabled} isLocalEmulation={runtime.isLocalEmulation} />
       </section>
     </main>
   );

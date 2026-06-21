@@ -22,7 +22,7 @@ interface SandboxMount {
 
 interface SandboxStatusInfo {
   id: string;
-  provider: 'mock' | 'docker' | 'gcp';
+  provider: 'mock' | 'docker' | 'gcp' | 'emulated';
   status: 'provisioning' | 'running' | 'stopped' | 'failed';
   mounts: SandboxMount[];
   lastActive: number;

@@ -1,11 +1,14 @@
 import { getDb, transaction } from '@/db/index';
+import { getRuntimeConfig } from '@/config/runtime';
 import { SandboxProvider, SandboxMount, SandboxStatusInfo } from './provider';
+import { EmulatedSandboxProvider } from './emulated';
 import { MockSandboxProvider } from './mock';
 import { DockerSandboxProvider } from './docker';
 import { GCPComputeSandboxProvider } from './gcp';
 import { v4 as uuidv4 } from 'uuid';
 
-const providerType = process.env.SANDBOX_PROVIDER || 'mock'; // 'gcp' | 'docker' | 'mock'
+const runtime = getRuntimeConfig();
+const providerType = runtime.sandboxProvider;
 const timeoutMs = process.env.SANDBOX_TIMEOUT_MS
   ? parseInt(process.env.SANDBOX_TIMEOUT_MS)
   : 10 * 60 * 1000; // 10 mins
@@ -20,6 +23,8 @@ class SandboxManager {
       this.provider = new GCPComputeSandboxProvider();
     } else if (providerType === 'docker') {
       this.provider = new DockerSandboxProvider();
+    } else if (providerType === 'emulated') {
+      this.provider = new EmulatedSandboxProvider();
     } else {
       this.provider = new MockSandboxProvider();
     }

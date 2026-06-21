@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import { getRuntimeConfig } from '@/config/runtime';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
 import { streamText, tool, toUIMessageStream, createUIMessageStreamResponse, isStepCount } from 'ai';
@@ -20,6 +21,160 @@ interface MessageInput {
   content: string;
 }
 
+type DemoToolCall = {
+  toolCallId: string;
+  toolName: 'execute_command' | 'write_file' | 'read_file' | 'mount_directory';
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
+};
+
+function serializeCommandResult(result: { stdout: string; stderr: string; exitCode: number }) {
+  return {
+    stdout: result.stdout,
+    stderr: result.stderr,
+    exitCode: result.exitCode,
+  };
+}
+
+function buildFallbackStream(agentMsgId: string, toolCalls: DemoToolCall[], text: string) {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue({ type: 'start', messageId: agentMsgId });
+
+      for (const tool of toolCalls) {
+        controller.enqueue({
+          type: 'tool-input-start',
+          toolCallId: tool.toolCallId,
+          toolName: tool.toolName,
+        });
+        controller.enqueue({
+          type: 'tool-input-available',
+          toolCallId: tool.toolCallId,
+          toolName: tool.toolName,
+          input: tool.input,
+        });
+        controller.enqueue({
+          type: 'tool-output-available',
+          toolCallId: tool.toolCallId,
+          output: tool.output,
+        });
+      }
+
+      const textId = uuidv4();
+      controller.enqueue({ type: 'text-start', id: textId });
+      controller.enqueue({ type: 'text-delta', id: textId, delta: text });
+      controller.enqueue({ type: 'text-end', id: textId });
+      controller.enqueue({ type: 'finish', finishReason: 'stop' });
+      controller.close();
+    },
+  });
+}
+
+async function runLocalDemoTurn(params: {
+  chatId: string;
+  sandboxId: string;
+  prompt: string;
+}) {
+  const { chatId, sandboxId, prompt } = params;
+  const normalizedPrompt = prompt.toLowerCase();
+  const toolCalls: DemoToolCall[] = [];
+  let assistantText = '';
+
+  if (normalizedPrompt.includes('mount')) {
+    const hostPath = process.cwd();
+    const sandboxPath = '/mnt/local-demo';
+    await sandboxManager.mountDirectory(sandboxId, hostPath, sandboxPath);
+    const mountToolCallId = uuidv4();
+    toolCalls.push({
+      toolCallId: mountToolCallId,
+      toolName: 'mount_directory',
+      input: { hostPath, sandboxPath },
+      output: { success: true, message: `Mounted ${hostPath} to ${sandboxPath}` },
+    });
+
+    const listCommand = `cd ${sandboxPath} && ls -la`;
+    const execToolCallId = uuidv4();
+    const execResult = await sandboxManager.executeCommand(sandboxId, listCommand, '/workspace');
+    toolCalls.push({
+      toolCallId: execToolCallId,
+      toolName: 'execute_command',
+      input: { command: listCommand, workDir: '/workspace' },
+      output: serializeCommandResult(execResult),
+    });
+
+    assistantText = `Local emulation mounted the repository at ${sandboxPath} and listed its contents.\n\n\`\`\`\n${execResult.stdout || execResult.stderr || 'No output'}\n\`\`\``;
+  } else if (normalizedPrompt.includes('write') || normalizedPrompt.includes('create') || normalizedPrompt.includes('file')) {
+    const filePath = 'demo-note.txt';
+    const content = `Local emulation note for chat ${chatId}.`;
+    const writeToolCallId = uuidv4();
+    await sandboxManager.writeFile(sandboxId, filePath, content);
+    toolCalls.push({
+      toolCallId: writeToolCallId,
+      toolName: 'write_file',
+      input: { filePath, content },
+      output: { success: true, message: `Wrote ${filePath}` },
+    });
+
+    const readToolCallId = uuidv4();
+    const readback = await sandboxManager.readFile(sandboxId, filePath);
+    toolCalls.push({
+      toolCallId: readToolCallId,
+      toolName: 'read_file',
+      input: { filePath },
+      output: { success: true, content: readback },
+    });
+
+    const execToolCallId = uuidv4();
+    const execResult = await sandboxManager.executeCommand(sandboxId, 'pwd && ls -la', '/workspace');
+    toolCalls.push({
+      toolCallId: execToolCallId,
+      toolName: 'execute_command',
+      input: { command: 'pwd && ls -la', workDir: '/workspace' },
+      output: serializeCommandResult(execResult),
+    });
+
+    assistantText = `Local emulation created ${filePath}, verified the contents, and inspected the workspace.\n\n\`\`\`\n${execResult.stdout || execResult.stderr || 'No output'}\n\`\`\``;
+  } else {
+    const command = 'pwd && ls -la';
+    const execToolCallId = uuidv4();
+    const execResult = await sandboxManager.executeCommand(sandboxId, command, '/workspace');
+    toolCalls.push({
+      toolCallId: execToolCallId,
+      toolName: 'execute_command',
+      input: { command, workDir: '/workspace' },
+      output: serializeCommandResult(execResult),
+    });
+
+    assistantText = `Local emulation is active. I inspected the sandbox workspace and got:\n\n\`\`\`\n${execResult.stdout || execResult.stderr || 'No output'}\n\`\`\``;
+  }
+
+  const agentMsgId = uuidv4();
+  const db = getDb();
+  await db
+    .prepare(
+      'INSERT INTO messages (id, chat_id, sender, content, tool_calls, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    .run(
+      agentMsgId,
+      chatId,
+      'agent',
+      assistantText,
+      JSON.stringify(
+        toolCalls.map((tool) => ({
+          toolName: tool.toolName,
+          toolCallId: tool.toolCallId,
+          arguments: tool.input,
+          output: tool.output,
+        })),
+      ),
+      new Date().toISOString(),
+    );
+
+  return createUIMessageStreamResponse({
+    stream: buildFallbackStream(agentMsgId, toolCalls, assistantText),
+  });
+}
+
 export async function POST(req: NextRequest) {
   // 1. Authenticate user session
   const session = await getServerSession(authOptions);
@@ -37,25 +192,37 @@ export async function POST(req: NextRequest) {
     );
   }
 
-    const db = getDb();
+  const runtime = getRuntimeConfig();
 
-    try {
-      // 2. Verify chat ownership
-      const chat = await db
-        .prepare('SELECT id FROM chats WHERE id = ? AND user_id = ?')
-        .get(chatId, userId);
-      if (!chat) {
-        return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 403 });
-      }
+  const db = getDb();
 
-      // 3. Save latest user message to DB
-      const latestUserMessage = messages[messages.length - 1];
-      if (latestUserMessage && latestUserMessage.role === 'user') {
-        const userMsgId = uuidv4();
-        await db.prepare(
+  try {
+    // 2. Verify chat ownership
+    const chat = await db
+      .prepare('SELECT id FROM chats WHERE id = ? AND user_id = ?')
+      .get(chatId, userId);
+    if (!chat) {
+      return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 403 });
+    }
+
+    // 3. Save latest user message to DB
+    const latestUserMessage = messages[messages.length - 1];
+    if (latestUserMessage && latestUserMessage.role === 'user') {
+      const userMsgId = uuidv4();
+      await db
+        .prepare(
           'INSERT INTO messages (id, chat_id, sender, content, created_at) VALUES (?, ?, ?, ?, ?)',
-        ).run(userMsgId, chatId, 'user', latestUserMessage.content, new Date().toISOString());
-      }
+        )
+        .run(userMsgId, chatId, 'user', latestUserMessage.content, new Date().toISOString());
+    }
+
+    if (runtime.isLocalEmulation || !runtime.geminiEnabled) {
+      return await runLocalDemoTurn({
+        chatId,
+        sandboxId,
+        prompt: latestUserMessage?.content || '',
+      });
+    }
 
     // 4. Stream AI response with tools calling loop
     const systemPrompt = `You are an agent with access to a secure sandboxed development environment. 

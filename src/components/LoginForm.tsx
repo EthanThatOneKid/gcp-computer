@@ -4,7 +4,12 @@ import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Chrome, ShieldAlert, ArrowRight } from 'lucide-react';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  showGoogleLogin: boolean;
+  isLocalEmulation: boolean;
+}
+
+export default function LoginForm({ showGoogleLogin, isLocalEmulation }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,6 +54,12 @@ export default function LoginForm() {
 
   return (
     <div className="space-y-6">
+      {isLocalEmulation && (
+        <div className="gcp-badge-primary items-center justify-center rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]">
+          Local Emulation
+        </div>
+      )}
+
       {error && (
         <div className="gcp-badge-error items-start rounded-[var(--radius-md)] p-3 text-sm">
           <ShieldAlert size={16} className="shrink-0" />
@@ -56,22 +67,25 @@ export default function LoginForm() {
         </div>
       )}
 
-      {/* Google Provider Button */}
-      <button
-        onClick={handleGoogleLogin}
-        disabled={loading}
-        className="gcp-btn-secondary w-full px-4 disabled:pointer-events-none disabled:opacity-50"
-      >
-        <Chrome size={18} />
-        <span>Sign in with Google</span>
-      </button>
+      {showGoogleLogin && (
+        <button
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="gcp-btn-secondary w-full px-4 disabled:pointer-events-none disabled:opacity-50"
+        >
+          <Chrome size={18} />
+          <span>Sign in with Google</span>
+        </button>
+      )}
 
       {/* Divider */}
-      <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.18em] text-[var(--color-medium-gray)]">
-        <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
-        <span>or use developer fallback</span>
-        <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
-      </div>
+      {showGoogleLogin && (
+        <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.18em] text-[var(--color-medium-gray)]">
+          <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
+          <span>or use developer fallback</span>
+          <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
+        </div>
+      )}
 
       {/* Credentials form */}
       <form onSubmit={handleMockLogin} className="space-y-4">

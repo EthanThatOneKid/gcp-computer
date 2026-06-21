@@ -1,12 +1,14 @@
 # Google Cloud Platform (GCP) Deployment Guide
 
-This guide walks you through deploying the **gcp-computer** Next.js App Router application to **Google Cloud Run** using **GitHub Actions** for automated CI/CD.
+Legacy guide. The current deployment path is Vercel: [docs/vercel-deployment-guide.md](vercel-deployment-guide.md).
+
+For production, keep `APP_MODE=prod` (the default) and reserve `APP_MODE=local-emulated` for localhost demos.
 
 ---
 
 ## Technical Overview
 
-- **Hosting Platform:** Google Cloud Run (Fully managed serverless container runner)
+- **Hosting Platform:** Google Cloud Run (legacy path)
 - **Container Registry:** Google Artifact Registry (Docker images)
 - **CI/CD:** GitHub Actions (Builds and pushes the container on push to `main` branch)
 - **Database:** Local SQLite (rebuilds ephemerally) or remote SQL (for persistent storage)
@@ -73,7 +75,7 @@ Add the secrets to your GitHub repository so the deployment workflow can access 
 | `GCP_SA_KEY` | The entire content of the downloaded service account JSON key file. | `{ "type": "service_account", ... }` |
 | `GCP_PROJECT_ID` | Your GCP Project ID. | `gcp-computer-dev` |
 | `NEXTAUTH_SECRET` | A secure random key for signing NextAuth JWT sessions. | A 32+ character random string |
-| `NEXTAUTH_URL` | The URL of your deployed Cloud Run service. | `https://gcp-computer-xxxxxx-uc.a.run.app` |
+| `NEXTAUTH_URL` | The URL of your deployed app. | `https://gcp-computer.vercel.app` |
 | `GEMINI_API_KEY` | Your Google Gemini API Key. | `AIzaSy...` |
 
 ---
@@ -92,7 +94,7 @@ Add the secrets to your GitHub repository so the deployment workflow can access 
    - Build the container using the multi-stage [Dockerfile](file:///C:/Users/ethan/Documents/GitHub/gcp-computer/Dockerfile) optimized for Next.js standalone.
    - Push the image to the registry.
    - Deploy the container to Google Cloud Run.
-4. When finished, the Action logs will output the live Cloud Run URL (e.g., `https://gcp-computer-xxxxxx-uc.a.run.app`).
+4. When finished, the live app URL should be `https://gcp-computer.vercel.app/`.
 
 ---
 

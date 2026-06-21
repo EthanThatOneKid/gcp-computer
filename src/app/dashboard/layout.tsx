@@ -2,12 +2,14 @@ import React from 'react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/auth';
+import { getRuntimeConfig } from '@/config/runtime';
 import { getDb } from '@/db/index';
 import DashboardLayoutClient from '@/components/DashboardLayoutClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const runtime = getRuntimeConfig();
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     redirect('/');
@@ -36,6 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <DashboardLayoutClient
       initialChats={chats}
       userEmail={session.user.email || 'developer@gcp.dev'}
+      isLocalEmulation={runtime.isLocalEmulation}
     >
       {children}
     </DashboardLayoutClient>
