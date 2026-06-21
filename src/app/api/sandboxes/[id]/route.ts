@@ -8,14 +8,14 @@ import { getDb } from '@/db/index';
 async function verifySandboxOwnership(sandboxId: string, userId: string): Promise<boolean> {
   const db = getDb();
   try {
-    const result = await db
+    const result = (await db
       .prepare(
         `SELECT c.user_id 
        FROM chats c
        JOIN chat_sandboxes cs ON c.id = cs.chat_id
        WHERE cs.sandbox_id = ?`,
       )
-      .get(sandboxId) as { user_id: string } | undefined;
+      .get(sandboxId)) as { user_id: string } | undefined;
 
     return !!result && result.user_id === userId;
   } catch {
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const { id: sandboxId } = await params;
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id: string }).id;
 
   if (!(await verifySandboxOwnership(sandboxId, userId))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -39,7 +39,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const details = await sandboxManager.getSandboxDetails(sandboxId);
     return NextResponse.json(details);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch status' }, { status: 400 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch status';
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

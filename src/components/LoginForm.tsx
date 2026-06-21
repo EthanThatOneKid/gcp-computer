@@ -55,7 +55,7 @@ export default function LoginForm({ showGoogleLogin, isLocalEmulation }: LoginFo
   return (
     <div className="space-y-6">
       {isLocalEmulation && (
-        <div className="gcp-badge-primary items-center justify-center rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]">
+        <div className="gcp-badge-primary items-center justify-center rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold tracking-[0.18em]">
           Local Emulation
         </div>
       )}
@@ -80,7 +80,7 @@ export default function LoginForm({ showGoogleLogin, isLocalEmulation }: LoginFo
 
       {/* Divider */}
       {showGoogleLogin && (
-        <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.18em] text-[var(--color-medium-gray)]">
+        <div className="flex items-center justify-center gap-3 text-xs tracking-[0.18em] text-[var(--color-medium-gray)]">
           <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
           <span>or use developer fallback</span>
           <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
@@ -90,7 +90,10 @@ export default function LoginForm({ showGoogleLogin, isLocalEmulation }: LoginFo
       {/* Credentials form */}
       <form onSubmit={handleMockLogin} className="space-y-4">
         <div className="space-y-1.5">
-          <label htmlFor="dev-email" className="text-xs font-medium text-[var(--color-medium-gray)]">
+          <label
+            htmlFor="dev-email"
+            className="text-xs font-medium text-[var(--color-medium-gray)]"
+          >
             Email address
           </label>
           <input

@@ -4,34 +4,42 @@ import { authOptions } from '@/auth';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
 
+type MessageRow = {
+  id: string;
+  sender: string;
+  content: string;
+  tool_calls: string | null;
+  created_at: string;
+};
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id: string }).id;
   const { id: chatId } = await params;
   const db = getDb();
 
   try {
-    const chat = await db
+    const chat = (await db
       .prepare('SELECT id, title FROM chats WHERE id = ? AND user_id = ?')
-      .get(chatId, userId) as { id: string; title: string } | undefined;
+      .get(chatId, userId)) as { id: string; title: string } | undefined;
 
     if (!chat) {
       return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
     }
 
-    const messages = await db
+    const messages = (await db
       .prepare(
         'SELECT id, sender, content, tool_calls, created_at FROM messages WHERE chat_id = ? ORDER BY created_at ASC',
       )
-      .all(chatId) as any[];
+      .all(chatId)) as MessageRow[];
 
     const parsedMessages = messages.map((msg) => ({
       ...msg,
-      tool_calls: msg.tool_calls ? JSON.parse(msg.tool_calls) : null,
+      tool_calls: msg.tool_calls ? (JSON.parse(msg.tool_calls) as unknown) : null,
     }));
 
     const sandbox = await sandboxManager.getOrCreateSandboxForChat(chatId);
@@ -42,7 +50,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       messages: parsedMessages,
       sandbox,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[API Chat Detail] Fetch error:', error);
     return NextResponse.json({ error: 'Failed to fetch chat details' }, { status: 500 });
   }
@@ -54,7 +62,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id: string }).id;
   const { id: chatId } = await params;
   const db = getDb();
 
@@ -67,18 +75,20 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
     }
 
-    const links = await db
+    const links = (await db
       .prepare('SELECT sandbox_id FROM chat_sandboxes WHERE chat_id = ?')
-      .all(chatId) as { sandbox_id: string }[];
+      .all(chatId)) as { sandbox_id: string }[];
 
     // Delete chat (cascades to messages and chat_sandboxes)
     await db.prepare('DELETE FROM chats WHERE id = ?').run(chatId);
 
     // Clean up sandboxes
     for (const link of links) {
-      const activeCount = ((await db
-        .prepare('SELECT COUNT(*) as count FROM chat_sandboxes WHERE sandbox_id = ?')
-        .get(link.sandbox_id)) as any).count;
+      const activeCount = (
+        (await db
+          .prepare('SELECT COUNT(*) as count FROM chat_sandboxes WHERE sandbox_id = ?')
+          .get(link.sandbox_id)) as { count: number }
+      ).count;
 
       if (activeCount === 0) {
         await sandboxManager.stopSandbox(link.sandbox_id);
@@ -87,7 +97,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[API Chat Detail] Delete error:', error);
     return NextResponse.json({ error: 'Failed to delete chat' }, { status: 500 });
   }
@@ -99,7 +109,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id: string }).id;
   const { id: chatId } = await params;
   const db = getDb();
 
@@ -119,14 +129,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Update title
-    await db
-      .prepare('UPDATE chats SET title = ? WHERE id = ?')
-      .run(title.trim(), chatId);
+    await db.prepare('UPDATE chats SET title = ? WHERE id = ?').run(title.trim(), chatId);
 
     return NextResponse.json({ success: true, title: title.trim() });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[API Chat Detail] Rename error:', error);
     return NextResponse.json({ error: 'Failed to rename chat' }, { status: 500 });
   }
 }
-

@@ -29,4 +29,5 @@ export interface SandboxProvider {
   mountDirectory(id: string, hostPath: string, sandboxPath: string): Promise<void>;
   getSandboxStatus(id: string): Promise<'provisioning' | 'running' | 'stopped' | 'failed'>;
   getIpAddress?(id: string): Promise<string | undefined>;
+  getMounts?(id: string): SandboxMount[];
 }

@@ -3,7 +3,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { Send, Terminal, FileText, HardDrive, CheckCircle2, XCircle, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import {
+  Send,
+  Terminal,
+  FileText,
+  HardDrive,
+  CheckCircle2,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+} from 'lucide-react';
 
 interface ChatWindowClientProps {
   chatId: string;
@@ -49,7 +59,12 @@ interface ToolPart {
     hostPath?: string;
     sandboxPath?: string;
   };
-  state?: 'input-streaming' | 'input-available' | 'approval-requested' | 'output-available' | 'output-error';
+  state?:
+    | 'input-streaming'
+    | 'input-available'
+    | 'approval-requested'
+    | 'output-available'
+    | 'output-error';
   output?: {
     stdout?: string;
     stderr?: string;
@@ -63,15 +78,22 @@ interface ToolPart {
 
 function ToolLogItem({ tool }: ToolLogItemProps) {
   const [expanded, setExpanded] = useState(false);
-  const isSuccess = tool.result && !tool.result.error && (tool.result.exitCode === undefined || tool.result.exitCode === 0);
+  const isSuccess =
+    tool.result &&
+    !tool.result.error &&
+    (tool.result.exitCode === undefined || tool.result.exitCode === 0);
 
   const getToolIcon = (name: string) => {
     switch (name) {
-      case 'execute_command': return <Terminal size={14} />;
+      case 'execute_command':
+        return <Terminal size={14} />;
       case 'write_file':
-      case 'read_file': return <FileText size={14} />;
-      case 'mount_directory': return <HardDrive size={14} />;
-      default: return <Terminal size={14} />;
+      case 'read_file':
+        return <FileText size={14} />;
+      case 'mount_directory':
+        return <HardDrive size={14} />;
+      default:
+        return <Terminal size={14} />;
     }
   };
 
@@ -98,8 +120,8 @@ function ToolLogItem({ tool }: ToolLogItemProps) {
 
   return (
     <div className="overflow-hidden rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.25)] font-mono text-xs">
-      <div 
-          className="flex cursor-pointer items-center justify-between bg-[rgba(255,255,255,0.03)] px-3 py-2 transition-all hover:bg-[rgba(255,255,255,0.06)]"
+      <div
+        className="flex cursor-pointer items-center justify-between bg-[rgba(255,255,255,0.03)] px-3 py-2 transition-all hover:bg-[rgba(255,255,255,0.06)]"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2 overflow-hidden">
@@ -129,9 +151,12 @@ function ToolLogItem({ tool }: ToolLogItemProps) {
       {expanded && (
         <div className="space-y-2 border-t border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.16)] p-3">
           <div className="text-[rgba(210,190,255,0.9)]">
-            $ {tool.toolName === 'execute_command' ? tool.args?.command : `${tool.toolName}(${JSON.stringify(tool.args)})`}
+            ${' '}
+            {tool.toolName === 'execute_command'
+              ? tool.args?.command
+              : `${tool.toolName}(${JSON.stringify(tool.args)})`}
           </div>
-          <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded-[var(--radius-sm)] border border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.24)] p-2 text-[rgba(255,255,255,0.82)]">
+          <pre className="max-h-60 overflow-auto rounded-[var(--radius-sm)] border border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.24)] p-2 whitespace-pre-wrap text-[rgba(255,255,255,0.82)]">
             <code>{getOutputText(tool.result)}</code>
           </pre>
         </div>
@@ -151,11 +176,13 @@ export default function ChatWindowClient({
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [prevChatTitle, setPrevChatTitle] = useState(chatTitle);
   const [editTitle, setEditTitle] = useState(chatTitle);
 
-  useEffect(() => {
+  if (chatTitle !== prevChatTitle) {
+    setPrevChatTitle(chatTitle);
     setEditTitle(chatTitle);
-  }, [chatTitle]);
+  }
 
   const handleSaveTitle = async () => {
     if (editTitle.trim() && editTitle.trim() !== chatTitle) {
@@ -213,7 +240,7 @@ export default function ChatWindowClient({
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-[rgba(232,230,228,0.08)] pb-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-terracotta)]">
+          <p className="text-xs font-semibold tracking-[0.22em] text-[var(--color-terracotta)]">
             Session
           </p>
           {isEditing ? (
@@ -231,14 +258,14 @@ export default function ChatWindowClient({
           ) : (
             <div className="group mt-1 flex items-center gap-2">
               <h2
-                className="cursor-pointer text-xl font-medium tracking-tight text-[var(--color-pristine-white)] hover:text-[var(--color-lavender)] transition-all"
+                className="cursor-pointer text-xl font-medium tracking-tight text-[var(--color-pristine-white)] transition-all hover:text-[var(--color-lavender)]"
                 onClick={() => setIsEditing(true)}
               >
                 {chatTitle}
               </h2>
               <button
                 onClick={() => setIsEditing(true)}
-                className="opacity-0 group-hover:opacity-100 p-1 text-[rgba(255,255,255,0.46)] hover:text-[var(--color-pristine-white)] transition-all"
+                className="p-1 text-[rgba(255,255,255,0.46)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--color-pristine-white)]"
                 title="Rename session"
               >
                 <Pencil size={14} />
@@ -252,7 +279,7 @@ export default function ChatWindowClient({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-5 pr-2">
+      <div className="flex-1 space-y-5 overflow-y-auto pr-2">
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center space-y-4 p-8 text-center text-[rgba(255,255,255,0.68)]">
             <h1 className="text-2xl font-medium tracking-tight text-[var(--color-pristine-white)]">
@@ -280,8 +307,8 @@ export default function ChatWindowClient({
         )}
 
         {messages.map((msg) => (
-          <div 
-            key={msg.id} 
+          <div
+            key={msg.id}
             className={`flex max-w-[85%] flex-col ${
               msg.role === 'user' ? 'self-end' : 'self-start'
             }`}
@@ -289,10 +316,10 @@ export default function ChatWindowClient({
             <span className="mb-1 px-1 text-[10px] font-semibold text-[rgba(255,255,255,0.48)]">
               {msg.role === 'user' ? 'You' : 'Agent'}
             </span>
-            <div 
+            <div
               className={`rounded-2xl border px-4 py-3 text-sm leading-relaxed ${
-                msg.role === 'user' 
-                  ? 'gcp-chat-bubble-user rounded-tr-sm' 
+                msg.role === 'user'
+                  ? 'gcp-chat-bubble-user rounded-tr-sm'
                   : 'gcp-chat-bubble-assistant rounded-tl-sm'
               }`}
             >
@@ -307,27 +334,36 @@ export default function ChatWindowClient({
                   }
                   if (part.type === 'reasoning') {
                     return (
-                      <div key={pIdx} className="my-1 rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.08)] bg-[rgba(255,255,255,0.03)] p-2.5 font-mono text-xs italic text-[rgba(255,255,255,0.64)]">
+                      <div
+                        key={pIdx}
+                        className="my-1 rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.08)] bg-[rgba(255,255,255,0.03)] p-2.5 font-mono text-xs text-[rgba(255,255,255,0.64)] italic"
+                      >
                         {part.text}
                       </div>
                     );
                   }
                   if (part.type.startsWith('tool-') || part.type === 'dynamic-tool') {
                     const toolPart = part as unknown as ToolPart;
-                    const toolName = part.type.startsWith('tool-') 
-                      ? part.type.substring(5) 
+                    const toolName = part.type.startsWith('tool-')
+                      ? part.type.substring(5)
                       : toolPart.toolName || 'unknown';
-                    
+
                     const toolLog = {
                       toolName,
                       args: toolPart.input,
-                      result: toolPart.state === 'output-available' 
-                        ? toolPart.output 
-                        : (toolPart.state === 'output-error' ? { error: toolPart.errorText } : undefined)
+                      result:
+                        toolPart.state === 'output-available'
+                          ? toolPart.output
+                          : toolPart.state === 'output-error'
+                            ? { error: toolPart.errorText }
+                            : undefined,
                     };
-                    
+
                     return (
-                      <div key={pIdx} className="mt-2 rounded-[var(--radius-md)] bg-[rgba(0,0,0,0.18)]">
+                      <div
+                        key={pIdx}
+                        className="mt-2 rounded-[var(--radius-md)] bg-[rgba(0,0,0,0.18)]"
+                      >
                         <ToolLogItem tool={toolLog} />
                       </div>
                     );
@@ -343,23 +379,25 @@ export default function ChatWindowClient({
 
       {/* Input form */}
       <form onSubmit={handleSubmit} className="shrink-0">
-        <div className={`gcp-panel flex gap-3 p-3 transition-all ${
-          sandboxStatus !== 'running'
-            ? 'opacity-60 bg-[rgba(255,255,255,0.01)] cursor-not-allowed'
-            : 'focus-within:border-[rgba(210,190,255,0.35)] focus-within:shadow-[0_0_15px_rgba(210,190,255,0.08)]'
-        }`}>
+        <div
+          className={`gcp-panel flex gap-3 p-3 transition-all ${
+            sandboxStatus !== 'running'
+              ? 'cursor-not-allowed bg-[rgba(255,255,255,0.01)] opacity-60'
+              : 'focus-within:border-[rgba(210,190,255,0.35)] focus-within:shadow-[0_0_15px_rgba(210,190,255,0.08)]'
+          }`}
+        >
           <textarea
-            className={`max-h-24 h-6 flex-1 resize-none bg-transparent text-sm leading-relaxed text-[var(--color-pristine-white)] outline-none placeholder:text-[rgba(255,255,255,0.4)] ${
+            className={`h-6 max-h-24 flex-1 resize-none bg-transparent text-sm leading-relaxed text-[var(--color-pristine-white)] outline-none placeholder:text-[rgba(255,255,255,0.4)] ${
               sandboxStatus !== 'running' ? 'cursor-not-allowed' : ''
             }`}
             placeholder={
               sandboxStatus === 'provisioning'
                 ? 'Waiting for sandbox to connect...'
                 : sandboxStatus === 'failed'
-                ? 'Sandbox failed to start. Click Wake Up to retry.'
-                : sandboxStatus === 'stopped'
-                ? 'Sandbox is offline. Click Wake Up to start.'
-                : 'Type your message or run prompt...'
+                  ? 'Sandbox failed to start. Click Wake Up to retry.'
+                  : sandboxStatus === 'stopped'
+                    ? 'Sandbox is offline. Click Wake Up to start.'
+                    : 'Type your message or run prompt...'
             }
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -374,16 +412,16 @@ export default function ChatWindowClient({
             }}
           />
           {isLoading ? (
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => stop()}
               className="flex items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-danger)] p-2 text-[var(--color-pristine-white)] transition-all hover:opacity-95"
             >
               <div className="h-3 w-3 animate-pulse rounded-sm bg-white" />
             </button>
           ) : (
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={!input.trim() || sandboxStatus !== 'running'}
               className="flex items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-lavender)] p-2 text-[var(--color-deep-black)] transition-all hover:opacity-95 disabled:pointer-events-none disabled:bg-transparent disabled:text-[rgba(255,255,255,0.3)]"
             >

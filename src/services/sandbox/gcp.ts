@@ -215,7 +215,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     await operation.promise();
   }
 
-  async stopSandbox(id: string, force?: boolean): Promise<void> {
+  async stopSandbox(id: string): Promise<void> {
     this.checkGCPConfig();
     const instanceName = this.getGCPName(id);
     console.log(`[GCP Sandbox] Stopping VM Instance: ${instanceName}`);
@@ -244,7 +244,11 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     this.cacheIp.delete(id);
   }
 
-  private async callAgent(id: string, endpoint: string, body: any): Promise<any> {
+  private async callAgent(
+    id: string,
+    endpoint: string,
+    body: Record<string, unknown>,
+  ): Promise<unknown> {
     const ip = await this.getIpAddress(id);
     if (!ip) {
       throw new Error(`Instance IP address is not available yet for sandbox ${id}.`);
@@ -273,7 +277,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
 
   async executeCommand(id: string, command: string, workDir?: string): Promise<RunCommandResult> {
     console.log(`[GCP Sandbox] Forwarding command to VM ${id}: ${command}`);
-    return await this.callAgent(id, '/execute', { command, workDir });
+    return (await this.callAgent(id, '/execute', { command, workDir })) as RunCommandResult;
   }
 
   async writeFile(id: string, filePath: string, content: string): Promise<void> {
@@ -283,7 +287,7 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
 
   async readFile(id: string, filePath: string): Promise<string> {
     console.log(`[GCP Sandbox] Forwarding read request to VM ${id}: ${filePath}`);
-    const res = await this.callAgent(id, '/read', { filePath });
+    const res = (await this.callAgent(id, '/read', { filePath })) as { content: string };
     return res.content;
   }
 

@@ -3,25 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ChatWindowClient from './ChatWindowClient';
 import SandboxStatusClient from './SandboxStatusClient';
-
-interface SandboxMount {
-  hostPath: string;
-  sandboxPath: string;
-}
-
-interface SandboxStatusInfo {
-  id: string;
-  provider: 'mock' | 'docker' | 'gcp' | 'emulated';
-  status: 'provisioning' | 'running' | 'stopped' | 'failed';
-  mounts: SandboxMount[];
-  lastActive: number;
-  ipAddress?: string;
-}
+import type { SandboxStatusInfo } from '@/services/sandbox/provider';
+import type { UIMessage } from '@ai-sdk/react';
 
 interface ChatSessionViewProps {
   chatId: string;
   initialChatTitle: string;
-  initialMessages: any[];
+  initialMessages: UIMessage[];
   initialSandbox: SandboxStatusInfo;
   token: string;
 }
@@ -62,9 +50,9 @@ export default function ChatSessionView({
               const data = await res.json();
               throw new Error(data.error || 'Failed to trigger wakeup');
             }
-          } catch (err: any) {
+          } catch (err) {
             console.error('[ChatSessionView] Auto-wakeup failed:', err);
-            setError(err.message || 'Auto-wakeup failed');
+            setError(err instanceof Error ? err.message : 'Auto-wakeup failed');
           } finally {
             setLoading(false);
           }
@@ -112,7 +100,7 @@ export default function ChatSessionView({
       }
       const data = await res.json();
       setSandbox(data);
-    } catch (err: any) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Refresh failed');
     } finally {
       setLoading(false);
@@ -140,7 +128,7 @@ export default function ChatSessionView({
         throw new Error(data.error || 'Failed to hibernate sandbox');
       }
       setSandbox((prev) => ({ ...prev, status: 'stopped' }));
-    } catch (err: any) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Hibernation failed');
     } finally {
       setLoading(false);
@@ -162,7 +150,7 @@ export default function ChatSessionView({
       }
       const data = await res.json();
       setSandbox((prev) => ({ ...prev, status: data.status || 'provisioning' }));
-    } catch (err: any) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Wakeup failed');
     } finally {
       setLoading(false);
@@ -192,7 +180,7 @@ export default function ChatSessionView({
         setSandbox(data.details);
       }
       return true;
-    } catch (err: any) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Directory mount failed');
       return false;
     }
@@ -214,10 +202,10 @@ export default function ChatSessionView({
       window.dispatchEvent(
         new CustomEvent('chat-renamed', {
           detail: { id: chatId, title: newTitle },
-        })
+        }),
       );
       return true;
-    } catch (err: any) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to rename chat');
       return false;
     }

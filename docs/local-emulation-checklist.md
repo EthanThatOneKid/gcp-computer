@@ -3,11 +3,13 @@
 Use this when production is not ready and you need a localhost demo path.
 
 ## Start Conditions
+
 - `APP_MODE=local-emulated`
 - `npm install`
 - `npm run dev`
 
 ## Demo Flow
+
 1. Open `http://localhost:3000`.
 2. Confirm the page shows `Local Emulation`.
 3. Sign in with credentials auth.
@@ -19,6 +21,7 @@ Use this when production is not ready and you need a localhost demo path.
 9. Sign out and confirm you return to the login page.
 
 ## Pass Criteria
+
 - Login works without Google credentials.
 - Sandbox commands run inside the emulator, not on the host OS.
 - Agent responses render without Gemini.

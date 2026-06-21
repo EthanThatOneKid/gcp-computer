@@ -12,8 +12,8 @@ export default defineTool({
     try {
       const content = await sandboxManager.readFile(input.sandboxId, input.filePath);
       return { success: true, content };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Read failed' };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Read failed' };
     }
   },
 });

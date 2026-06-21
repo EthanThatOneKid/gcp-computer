@@ -7,14 +7,14 @@ import { getDb } from '@/db/index';
 async function verifySandboxOwnership(sandboxId: string, userId: string): Promise<boolean> {
   const db = getDb();
   try {
-    const result = await db
+    const result = (await db
       .prepare(
         `SELECT c.user_id 
        FROM chats c
        JOIN chat_sandboxes cs ON c.id = cs.chat_id
        WHERE cs.sandbox_id = ?`,
       )
-      .get(sandboxId) as { user_id: string } | undefined;
+      .get(sandboxId)) as { user_id: string } | undefined;
     return !!result && result.user_id === userId;
   } catch {
     return false;
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { sandboxId, hostPath, sandboxPath } = await req.json();
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id: string }).id;
 
   if (!sandboxId || !hostPath || !sandboxPath) {
     return NextResponse.json(
@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     await sandboxManager.mountDirectory(sandboxId, hostPath, sandboxPath);
     const details = await sandboxManager.getSandboxDetails(sandboxId);
     return NextResponse.json({ success: true, details });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Mount failed' }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Mount failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

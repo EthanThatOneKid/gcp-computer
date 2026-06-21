@@ -18,7 +18,7 @@ export function getRuntimeConfig(): RuntimeConfig {
     isLocalEmulation,
     sandboxProvider: isLocalEmulation
       ? 'emulated'
-      : ((process.env.SANDBOX_PROVIDER as SandboxProviderType | undefined) || 'mock'),
+      : (process.env.SANDBOX_PROVIDER as SandboxProviderType | undefined) || 'mock',
     googleAuthEnabled:
       !isLocalEmulation &&
       Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),

@@ -34,9 +34,7 @@ export default function DashboardLayoutClient({
   React.useEffect(() => {
     const handleChatRenamed = (e: Event) => {
       const { id, title } = (e as CustomEvent).detail;
-      setChats((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, title } : c))
-      );
+      setChats((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
     };
     window.addEventListener('chat-renamed', handleChatRenamed);
     return () => {
@@ -133,7 +131,7 @@ export default function DashboardLayoutClient({
         </div>
 
         {isLocalEmulation && !collapsed && (
-          <div className="mx-3 mt-3 rounded-[var(--radius-md)] border border-[rgba(210,190,255,0.18)] bg-[rgba(210,190,255,0.08)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-lavender)]">
+          <div className="mx-3 mt-3 rounded-[var(--radius-md)] border border-[rgba(210,190,255,0.18)] bg-[rgba(210,190,255,0.08)] px-3 py-2 text-[10px] font-semibold tracking-[0.2em] text-[var(--color-lavender)]">
             Local Emulation
           </div>
         )}

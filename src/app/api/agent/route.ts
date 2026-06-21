@@ -4,7 +4,13 @@ import { authOptions } from '@/auth';
 import { getRuntimeConfig } from '@/config/runtime';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
-import { streamText, tool, toUIMessageStream, createUIMessageStreamResponse, isStepCount } from 'ai';
+import {
+  streamText,
+  tool,
+  toUIMessageStream,
+  createUIMessageStreamResponse,
+  isStepCount,
+} from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
@@ -20,9 +26,10 @@ interface SessionUser {
   id: string;
 }
 
-interface MessageInput {
+interface IncomingMessage {
   role: 'user' | 'assistant' | 'system' | 'data';
-  content: string;
+  content?: string;
+  parts?: Array<{ type: string; text?: string }>;
 }
 
 type DemoToolCall = {
@@ -74,11 +81,7 @@ function buildFallbackStream(agentMsgId: string, toolCalls: DemoToolCall[], text
   });
 }
 
-async function runLocalDemoTurn(params: {
-  chatId: string;
-  sandboxId: string;
-  prompt: string;
-}) {
+async function runLocalDemoTurn(params: { chatId: string; sandboxId: string; prompt: string }) {
   const { chatId, sandboxId, prompt } = params;
   const normalizedPrompt = prompt.toLowerCase();
   const toolCalls: DemoToolCall[] = [];
@@ -107,7 +110,11 @@ async function runLocalDemoTurn(params: {
     });
 
     assistantText = `Local emulation mounted the repository at ${sandboxPath} and listed its contents.\n\n\`\`\`\n${execResult.stdout || execResult.stderr || 'No output'}\n\`\`\``;
-  } else if (normalizedPrompt.includes('write') || normalizedPrompt.includes('create') || normalizedPrompt.includes('file')) {
+  } else if (
+    normalizedPrompt.includes('write') ||
+    normalizedPrompt.includes('create') ||
+    normalizedPrompt.includes('file')
+  ) {
     const filePath = 'demo-note.txt';
     const content = `Local emulation note for chat ${chatId}.`;
     const writeToolCallId = uuidv4();
@@ -129,7 +136,11 @@ async function runLocalDemoTurn(params: {
     });
 
     const execToolCallId = uuidv4();
-    const execResult = await sandboxManager.executeCommand(sandboxId, 'pwd && ls -la', '/workspace');
+    const execResult = await sandboxManager.executeCommand(
+      sandboxId,
+      'pwd && ls -la',
+      '/workspace',
+    );
     toolCalls.push({
       toolCallId: execToolCallId,
       toolName: 'execute_command',
@@ -210,13 +221,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Helper to get text content from message (handles both plain string content and structured parts)
-    const getMessageText = (msg: any): string => {
+    const getMessageText = (msg: IncomingMessage | undefined): string => {
       if (!msg) return '';
       if (typeof msg.content === 'string' && msg.content !== '') {
         return msg.content;
       }
       if (Array.isArray(msg.parts)) {
-        const textPart = msg.parts.find((p: any) => p.type === 'text');
+        const textPart = msg.parts.find((p) => p.type === 'text');
         if (textPart && typeof textPart.text === 'string') {
           return textPart.text;
         }
@@ -254,7 +265,7 @@ Format command outputs or file listings nicely in markdown. Always explain what 
     const result = await streamText({
       model: google('gemini-2.0-flash'),
       system: systemPrompt,
-      messages: messages.map((m: any) => ({
+      messages: messages.map((m: IncomingMessage) => ({
         role: m.role,
         content: getMessageText(m),
       })),
@@ -326,16 +337,18 @@ Format command outputs or file listings nicely in markdown. Always explain what 
             output: t.output || { success: true },
           }));
 
-          await db.prepare(
-            'INSERT INTO messages (id, chat_id, sender, content, tool_calls, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-          ).run(
-            agentMsgId,
-            chatId,
-            'agent',
-            text || 'Running sandbox tools...',
-            parsedTools && parsedTools.length > 0 ? JSON.stringify(parsedTools) : null,
-            new Date().toISOString(),
-          );
+          await db
+            .prepare(
+              'INSERT INTO messages (id, chat_id, sender, content, tool_calls, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            )
+            .run(
+              agentMsgId,
+              chatId,
+              'agent',
+              text || 'Running sandbox tools...',
+              parsedTools && parsedTools.length > 0 ? JSON.stringify(parsedTools) : null,
+              new Date().toISOString(),
+            );
           console.log(`[API Agent] Persisted agent turn in database for chat ${chatId}`);
         } catch (dbErr) {
           console.error('[API Agent] Failed to save agent response to database:', dbErr);
@@ -353,9 +366,6 @@ Format command outputs or file listings nicely in markdown. Always explain what 
 
     const errorMessage = error instanceof Error ? error.message : 'Agent failed to respond';
     // Offline/Fallback Smart Mock Agent
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -13,8 +13,8 @@ export default defineTool({
     try {
       await sandboxManager.writeFile(input.sandboxId, input.filePath, input.content);
       return { success: true, message: `Successfully wrote file to ${input.filePath}` };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Write failed' };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Write failed' };
     }
   },
 });

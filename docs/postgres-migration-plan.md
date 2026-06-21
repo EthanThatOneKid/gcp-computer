@@ -64,6 +64,7 @@ Move the local SQLite database to PostgreSQL on a GCP e2-micro VM (always free t
 - [ ] **P2.9** Restart Caddy and verify HTTPS works from a browser.
 - [ ] **P2.10** Clone the repo to `/opt/gcp-computer` and run `npm ci && npm run build`.
 - [ ] **P2.11** Create `/etc/systemd/system/gcp-computer.service`:
+
   ```ini
   [Unit]
   Description=GCP Computer Next.js App
@@ -81,6 +82,7 @@ Move the local SQLite database to PostgreSQL on a GCP e2-micro VM (always free t
   [Install]
   WantedBy=multi-user.target
   ```
+
 - [ ] **P2.12** Enable and start the service.
 
 ---
@@ -108,21 +110,21 @@ Move the local SQLite database to PostgreSQL on a GCP e2-micro VM (always free t
   - All `?` → `$1`, `$2`, etc. (PostgreSQL positional params)
 - [ ] **P3.5** Add `await` at every call site across 11 files:
 
-  | File | Changes |
-  |---|---|
-  | `src/db/index.ts` | Complete rewrite |
-  | `src/db/schema.sql` | Delete (replaced by migrations) |
-  | `src/app/api/auth/[...nextauth]/route.ts` | 6 queries: `?`→`$N`, add `await` |
-  | `src/app/api/chats/route.ts` | 2 queries: correlated subquery adaptation |
-  | `src/app/api/chats/[id]/route.ts` | 7 queries + wrap sequential deletes in transaction |
-  | `src/app/api/agent/route.ts` | 3 queries |
-  | `src/app/api/sandboxes/execute/route.ts` | 1 JOIN query |
-  | `src/app/api/sandboxes/[id]/route.ts` | 1 JOIN query |
-  | `src/app/api/sandboxes/mount/route.ts` | 1 JOIN query |
-  | `src/app/api/sandboxes/sleep/route.ts` | 1 JOIN query |
-  | `src/services/sandbox/manager.ts` | 12 queries — most complex file, add tx for INSERT+INSERT sequences |
-  | `src/app/dashboard/layout.tsx` | 1 query — make server component `async` |
-  | `src/app/dashboard/chat/[id]/page.tsx` | 2 queries — make server component `async` |
+  | File                                      | Changes                                                            |
+  | ----------------------------------------- | ------------------------------------------------------------------ |
+  | `src/db/index.ts`                         | Complete rewrite                                                   |
+  | `src/db/schema.sql`                       | Delete (replaced by migrations)                                    |
+  | `src/app/api/auth/[...nextauth]/route.ts` | 6 queries: `?`→`$N`, add `await`                                   |
+  | `src/app/api/chats/route.ts`              | 2 queries: correlated subquery adaptation                          |
+  | `src/app/api/chats/[id]/route.ts`         | 7 queries + wrap sequential deletes in transaction                 |
+  | `src/app/api/agent/route.ts`              | 3 queries                                                          |
+  | `src/app/api/sandboxes/execute/route.ts`  | 1 JOIN query                                                       |
+  | `src/app/api/sandboxes/[id]/route.ts`     | 1 JOIN query                                                       |
+  | `src/app/api/sandboxes/mount/route.ts`    | 1 JOIN query                                                       |
+  | `src/app/api/sandboxes/sleep/route.ts`    | 1 JOIN query                                                       |
+  | `src/services/sandbox/manager.ts`         | 12 queries — most complex file, add tx for INSERT+INSERT sequences |
+  | `src/app/dashboard/layout.tsx`            | 1 query — make server component `async`                            |
+  | `src/app/dashboard/chat/[id]/page.tsx`    | 2 queries — make server component `async`                          |
 
 - [ ] **P3.6** Update return value handling:
   - `db.prepare(sql).get(...)` → `(await pool.query(sql, params)).rows[0]`
@@ -156,12 +158,12 @@ Move the local SQLite database to PostgreSQL on a GCP e2-micro VM (always free t
 
 ## Edge Cases & Risks
 
-| Risk | Mitigation |
-|---|---|
-| **No test coverage** — every change is manual | Verify each endpoint manually after migration. Write smoke tests before touching code (optional but recommended). |
-| **Sequential writes not wrapped in transactions** | Add `BEGIN`/`COMMIT` in `manager.ts` for INSERT+INSERT and INSERT+UPDATE sequences. PostgreSQL enforces atomicity. |
-| **Server component data fetching** | `layout.tsx` and `page.tsx` use `getDb()` synchronously — need to become `async`. Next.js supports async server components, but the data flow needs verification. |
-| **Correlated subquery in chats list** | Same SQL pattern works in PostgreSQL. May need `LIMIT 1` instead of `TOP 1` (already uses `LIMIT`). |
-| **Timezone handling** | `DATETIME` → `TIMESTAMPTZ` — existing data uses UTC. Verify timestamps display correctly. |
-| **VM out of memory** | e2-micro has 1GB RAM. Next.js + PostgreSQL + Caddy should fit, but may need `--max-old-space-size=512` for Node. |
-| **Let's Encrypt rate limits** | Caddy handles this automatically. Test with staging CA first if needed. |
+| Risk                                              | Mitigation                                                                                                                                                        |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No test coverage** — every change is manual     | Verify each endpoint manually after migration. Write smoke tests before touching code (optional but recommended).                                                 |
+| **Sequential writes not wrapped in transactions** | Add `BEGIN`/`COMMIT` in `manager.ts` for INSERT+INSERT and INSERT+UPDATE sequences. PostgreSQL enforces atomicity.                                                |
+| **Server component data fetching**                | `layout.tsx` and `page.tsx` use `getDb()` synchronously — need to become `async`. Next.js supports async server components, but the data flow needs verification. |
+| **Correlated subquery in chats list**             | Same SQL pattern works in PostgreSQL. May need `LIMIT 1` instead of `TOP 1` (already uses `LIMIT`).                                                               |
+| **Timezone handling**                             | `DATETIME` → `TIMESTAMPTZ` — existing data uses UTC. Verify timestamps display correctly.                                                                         |
+| **VM out of memory**                              | e2-micro has 1GB RAM. Next.js + PostgreSQL + Caddy should fit, but may need `--max-old-space-size=512` for Node.                                                  |
+| **Let's Encrypt rate limits**                     | Caddy handles this automatically. Test with staging CA first if needed.                                                                                           |

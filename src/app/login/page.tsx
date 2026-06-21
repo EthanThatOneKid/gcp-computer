@@ -21,7 +21,7 @@ export default async function LoginPage() {
         <div className="space-y-4 text-center">
           {runtime.isLocalEmulation && (
             <div className="flex justify-center">
-              <span className="gcp-badge-primary rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em]">
+              <span className="gcp-badge-primary rounded-full px-3 py-1 text-[10px] font-semibold tracking-[0.22em]">
                 Local Emulation
               </span>
             </div>
@@ -32,7 +32,7 @@ export default async function LoginPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-terracotta)]">
+            <p className="text-xs font-semibold tracking-[0.24em] text-[var(--color-terracotta)]">
               GCP
             </p>
             <h1 className="text-3xl font-medium tracking-tight text-[var(--color-pure-black)]">

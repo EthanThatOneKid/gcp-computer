@@ -24,9 +24,7 @@ function normalizeVirtualPath(inputPath: string): string {
 }
 
 function splitVirtualPath(virtualPath: string): string[] {
-  return normalizeVirtualPath(virtualPath)
-    .split('/')
-    .filter(Boolean);
+  return normalizeVirtualPath(virtualPath).split('/').filter(Boolean);
 }
 
 function cloneNode(node: VirtualNode): VirtualNode {
@@ -233,8 +231,15 @@ async function runCommandSegment(
   }
 
   if (trimmed.startsWith('ls')) {
-    const target = trimmed.split(/\s+/).slice(1).filter((part) => !part.startsWith('-'))[0] || cwd;
-    return { output: formatList(fsx.listDir(path.posix.resolve(cwd, parseQuotedText(target)))), cwd };
+    const target =
+      trimmed
+        .split(/\s+/)
+        .slice(1)
+        .filter((part) => !part.startsWith('-'))[0] || cwd;
+    return {
+      output: formatList(fsx.listDir(path.posix.resolve(cwd, parseQuotedText(target)))),
+      cwd,
+    };
   }
 
   if (trimmed.startsWith('echo ')) {
@@ -242,7 +247,10 @@ async function runCommandSegment(
     if (redirMatch) {
       const [, value, op, dest] = redirMatch;
       const absoluteDest = path.posix.resolve(cwd, parseQuotedText(dest.trim()));
-      const existing = op === '>>' && fsx.statPath(absoluteDest) === 'file' ? fsx.readFile(absoluteDest) + '\n' : '';
+      const existing =
+        op === '>>' && fsx.statPath(absoluteDest) === 'file'
+          ? fsx.readFile(absoluteDest) + '\n'
+          : '';
       fsx.writeFile(absoluteDest, `${existing}${parseQuotedText(value.trim())}`);
       return { output: '', cwd };
     }
@@ -267,13 +275,19 @@ async function runCommandSegment(
 
   if (trimmed.startsWith('cp ')) {
     const [, from, to] = trimmed.split(/\s+/);
-    fsx.copyPath(path.posix.resolve(cwd, parseQuotedText(from)), path.posix.resolve(cwd, parseQuotedText(to)));
+    fsx.copyPath(
+      path.posix.resolve(cwd, parseQuotedText(from)),
+      path.posix.resolve(cwd, parseQuotedText(to)),
+    );
     return { output: '', cwd };
   }
 
   if (trimmed.startsWith('mv ')) {
     const [, from, to] = trimmed.split(/\s+/);
-    fsx.movePath(path.posix.resolve(cwd, parseQuotedText(from)), path.posix.resolve(cwd, parseQuotedText(to)));
+    fsx.movePath(
+      path.posix.resolve(cwd, parseQuotedText(from)),
+      path.posix.resolve(cwd, parseQuotedText(to)),
+    );
     return { output: '', cwd };
   }
 
@@ -309,16 +323,28 @@ async function runCommandSegment(
   if (trimmed.startsWith('git clone ')) {
     const parts = trimmed.split(/\s+/);
     const repoUrl = parts[2];
-    const dest = parts[3] ? parseQuotedText(parts[3]) : path.posix.basename(repoUrl.replace(/\.git$/, ''));
+    const dest = parts[3]
+      ? parseQuotedText(parts[3])
+      : path.posix.basename(repoUrl.replace(/\.git$/, ''));
     const destPath = path.posix.resolve(cwd, dest);
     fsx.mkdirp(destPath);
-    fsx.writeFile(path.posix.join(destPath, 'README.md'), `Cloned in local emulation from ${repoUrl}\n`);
+    fsx.writeFile(
+      path.posix.join(destPath, 'README.md'),
+      `Cloned in local emulation from ${repoUrl}\n`,
+    );
     return { output: `Cloned ${repoUrl} into ${dest}`, cwd };
   }
 
-  if (trimmed.startsWith('npm install') || trimmed.startsWith('pnpm install') || trimmed.startsWith('yarn install')) {
+  if (
+    trimmed.startsWith('npm install') ||
+    trimmed.startsWith('pnpm install') ||
+    trimmed.startsWith('yarn install')
+  ) {
     fsx.mkdirp(path.posix.resolve(cwd, 'node_modules'));
-    fsx.writeFile(path.posix.resolve(cwd, 'node_modules/.emulated-install'), 'installed in local emulation');
+    fsx.writeFile(
+      path.posix.resolve(cwd, 'node_modules/.emulated-install'),
+      'installed in local emulation',
+    );
     return { output: 'Packages installed in local emulation.', cwd };
   }
 

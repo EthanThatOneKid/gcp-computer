@@ -8,7 +8,7 @@ export const proxy = withAuth(
     callbacks: {
       authorized: ({ token }) => !!token,
     },
-  }
+  },
 );
 
 export default proxy;

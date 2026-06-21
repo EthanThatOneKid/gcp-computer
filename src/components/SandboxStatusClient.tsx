@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Terminal,
   HardDrive,
@@ -154,7 +154,7 @@ export default function SandboxStatusClient({
   };
 
   return (
-    <aside className="gcp-sidebar flex h-full w-80 select-none flex-col overflow-hidden border-l">
+    <aside className="gcp-sidebar flex h-full w-80 flex-col overflow-hidden border-l select-none">
       {/* Header */}
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-[rgba(232,230,228,0.08)] px-4">
         <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export default function SandboxStatusClient({
         {/* Engine status block */}
         <div className="gcp-panel space-y-3 p-3.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgba(255,255,255,0.42)]">
+            <span className="text-[10px] font-semibold tracking-[0.22em] text-[rgba(255,255,255,0.42)]">
               Engine Status
             </span>
             {getStatusBadge(sandbox.status)}
@@ -193,7 +193,7 @@ export default function SandboxStatusClient({
 
           <div className="grid grid-cols-2 gap-y-2 text-xs">
             <div className="text-[rgba(255,255,255,0.56)]">Provider</div>
-            <div className="text-right font-medium capitalize text-[var(--color-pristine-white)]">
+            <div className="text-right font-medium text-[var(--color-pristine-white)] capitalize">
               {sandbox.provider === 'mock' ? 'local host' : sandbox.provider}
             </div>
 
@@ -249,7 +249,7 @@ export default function SandboxStatusClient({
         {/* Directory Mounts section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgba(255,255,255,0.42)]">
+            <span className="text-[10px] font-semibold tracking-[0.22em] text-[rgba(255,255,255,0.42)]">
               Directory Mounts
             </span>
             <span className="rounded-full bg-[rgba(255,255,255,0.05)] px-2 py-0.5 text-[10px] font-semibold text-[rgba(255,255,255,0.6)]">
@@ -258,12 +258,11 @@ export default function SandboxStatusClient({
           </div>
 
           {/* Mount form */}
-          <form
-            onSubmit={handleMountSubmit}
-            className="gcp-panel space-y-2 p-3"
-          >
+          <form onSubmit={handleMountSubmit} className="gcp-panel space-y-2 p-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-semibold text-[rgba(255,255,255,0.42)]">Host Directory Path</label>
+              <label className="text-[10px] font-semibold text-[rgba(255,255,255,0.42)]">
+                Host Directory Path
+              </label>
               <input
                 type="text"
                 placeholder="e.g. C:/Users/name/Projects"
@@ -275,7 +274,9 @@ export default function SandboxStatusClient({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-semibold text-[rgba(255,255,255,0.42)]">Sandbox Mount Point</label>
+              <label className="text-[10px] font-semibold text-[rgba(255,255,255,0.42)]">
+                Sandbox Mount Point
+              </label>
               <input
                 type="text"
                 placeholder="e.g. /workspace/projects"
@@ -312,7 +313,7 @@ export default function SandboxStatusClient({
                   <HardDrive size={13} className="mt-0.5 shrink-0 text-[rgba(255,255,255,0.42)]" />
                   <div className="space-y-1 overflow-hidden text-[10px] leading-tight">
                     <div>
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-[rgba(255,255,255,0.38)]">
+                      <span className="text-[9px] font-bold tracking-wide text-[rgba(255,255,255,0.38)]">
                         Host:
                       </span>
                       <div
@@ -323,7 +324,7 @@ export default function SandboxStatusClient({
                       </div>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-[rgba(255,255,255,0.38)]">
+                      <span className="text-[9px] font-bold tracking-wide text-[rgba(255,255,255,0.38)]">
                         Sandbox:
                       </span>
                       <div
@@ -346,7 +347,7 @@ export default function SandboxStatusClient({
 
         {/* Direct Terminal Execution */}
         <div className="space-y-3 pt-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgba(255,255,255,0.42)]">
+          <span className="text-[10px] font-semibold tracking-[0.22em] text-[rgba(255,255,255,0.42)]">
             Direct Terminal Command
           </span>
 
@@ -382,7 +383,13 @@ export default function SandboxStatusClient({
             <div className="overflow-hidden rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.25)] font-mono text-[10px]">
               <div className="flex items-center justify-between border-b border-[rgba(232,230,228,0.06)] bg-[rgba(255,255,255,0.03)] px-2.5 py-1.5 text-[9px] text-[rgba(255,255,255,0.46)]">
                 <span>Output Log</span>
-                <span className={termOutput.exitCode === 0 ? 'text-[var(--color-lavender)]' : 'text-[var(--color-danger)]'}>
+                <span
+                  className={
+                    termOutput.exitCode === 0
+                      ? 'text-[var(--color-lavender)]'
+                      : 'text-[var(--color-danger)]'
+                  }
+                >
                   exit: {termOutput.exitCode}
                 </span>
               </div>

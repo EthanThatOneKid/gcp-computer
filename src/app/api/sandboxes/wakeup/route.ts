@@ -7,14 +7,14 @@ import { getDb } from '@/db/index';
 async function verifySandboxOwnership(sandboxId: string, userId: string): Promise<boolean> {
   const db = getDb();
   try {
-    const result = await db
+    const result = (await db
       .prepare(
         `SELECT c.user_id 
        FROM chats c
        JOIN chat_sandboxes cs ON c.id = cs.chat_id
        WHERE cs.sandbox_id = ?`,
       )
-      .get(sandboxId) as { user_id: string } | undefined;
+      .get(sandboxId)) as { user_id: string } | undefined;
     return !!result && result.user_id === userId;
   } catch {
     return false;
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { sandboxId } = await req.json();
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id: string }).id;
 
   if (!sandboxId) {
     return NextResponse.json({ error: 'sandboxId is required' }, { status: 400 });
@@ -40,9 +40,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const db = getDb();
-    const row = await db
+    const row = (await db
       .prepare(`SELECT status FROM sandbox_instances WHERE id = ?`)
-      .get(sandboxId) as { status: string } | undefined;
+      .get(sandboxId)) as { status: string } | undefined;
 
     if (!row) {
       return NextResponse.json({ error: 'Sandbox not found' }, { status: 404 });
@@ -51,9 +51,10 @@ export async function POST(req: NextRequest) {
     if (row.status !== 'running' && row.status !== 'provisioning') {
       await sandboxManager.startSandbox(sandboxId, false);
     }
-    
+
     return NextResponse.json({ success: true, status: 'provisioning' });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to wakeup' }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to wakeup';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -70,13 +70,13 @@ Add the secrets to your GitHub repository so the deployment workflow can access 
 1. In your GitHub repository, navigate to **Settings** > **Secrets and variables** > **Actions**.
 2. Click **New Repository Secret** and add the following:
 
-| Secret Name | Description | Example / Format |
-| :--- | :--- | :--- |
-| `GCP_SA_KEY` | The entire content of the downloaded service account JSON key file. | `{ "type": "service_account", ... }` |
-| `GCP_PROJECT_ID` | Your GCP Project ID. | `gcp-computer-dev` |
-| `NEXTAUTH_SECRET` | A secure random key for signing NextAuth JWT sessions. | A 32+ character random string |
-| `NEXTAUTH_URL` | The URL of your deployed app. | `https://gcp-computer.vercel.app` |
-| `GEMINI_API_KEY` (or `GOOGLE_GENERATIVE_AI_API_KEY`) | Your Google Gemini API Key. | `AIzaSy...` |
+| Secret Name                                          | Description                                                         | Example / Format                     |
+| :--------------------------------------------------- | :------------------------------------------------------------------ | :----------------------------------- |
+| `GCP_SA_KEY`                                         | The entire content of the downloaded service account JSON key file. | `{ "type": "service_account", ... }` |
+| `GCP_PROJECT_ID`                                     | Your GCP Project ID.                                                | `gcp-computer-dev`                   |
+| `NEXTAUTH_SECRET`                                    | A secure random key for signing NextAuth JWT sessions.              | A 32+ character random string        |
+| `NEXTAUTH_URL`                                       | The URL of your deployed app.                                       | `https://gcp-computer.vercel.app`    |
+| `GEMINI_API_KEY` (or `GOOGLE_GENERATIVE_AI_API_KEY`) | Your Google Gemini API Key.                                         | `AIzaSy...`                          |
 
 ---
 
@@ -103,14 +103,18 @@ Add the secrets to your GitHub repository so the deployment workflow can access 
 Cloud Run is **stateless** and **serverless**. When no requests come in, your application containers scale to zero. When they scale up again, they spin up fresh instances, meaning any changes to the local `database.db` SQLite file are lost.
 
 ### Option A: Use a Cloud Database (Recommended)
+
 Switch your database backend to a managed cloud service.
+
 1. Create a serverless database on **Supabase**, **Neon**, **Vercel Postgres**, or **Google Cloud SQL (Postgres)**.
 2. In [index.ts](file:///C:/Users/ethan/Documents/GitHub/gcp-computer/src/db/index.ts), replace the local `node:sqlite` connection with a Postgres client (e.g., `pg` or `postgres`).
 3. Inject the connection string secret in your GitHub Actions env/variables config:
    `DATABASE_URL=postgres://user:password@host/db`
 
 ### Option B: Mount a Network Drive (GCS FUSE)
+
 You can mount a **Google Cloud Storage (GCS)** bucket directly as a container volume:
+
 1. Create a GCS bucket (e.g. `gcp-computer-db-bucket`) in the same region (`us-central1`).
 2. Go to the Cloud Run console, select your service, click **Edit & Deploy New Revision**:
    - Go to **Volumes** > **Add Volume** > select **Cloud Storage Bucket**.

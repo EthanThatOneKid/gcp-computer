@@ -30,7 +30,7 @@ export class MockSandboxProvider implements SandboxProvider {
     console.log(`[LocalSandbox] Sandbox ${id} started`);
   }
 
-  async stopSandbox(id: string, force?: boolean): Promise<void> {
+  async stopSandbox(id: string): Promise<void> {
     this.statuses.set(id, 'stopped');
     console.log(`[LocalSandbox] Sandbox ${id} stopped`);
   }
@@ -66,11 +66,12 @@ export class MockSandboxProvider implements SandboxProvider {
         stderr: stderr.trim(),
         exitCode: 0,
       };
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { stdout?: string; stderr?: string; code?: number; message?: string };
       return {
-        stdout: error.stdout ? error.stdout.trim() : '',
-        stderr: error.stderr ? error.stderr.trim() : error.message || 'Unknown error',
-        exitCode: error.code !== undefined ? error.code : 1,
+        stdout: err.stdout ? err.stdout.trim() : '',
+        stderr: err.stderr ? err.stderr.trim() : err.message || 'Unknown error',
+        exitCode: err.code !== undefined ? err.code : 1,
       };
     }
   }

@@ -31,11 +31,11 @@ jobs:
           # Copy public and static assets to the standalone directory
           cp -r public .next/standalone/public
           cp -r .next/static .next/standalone/.next/static
-          
+
           # Copy database migrations so they are accessible by getDb() at runtime
           mkdir -p .next/standalone/src/db/migrations
           cp -r src/db/migrations/* .next/standalone/src/db/migrations/
-          
+
           # Compress the standalone outputs
           tar -czf build.tar.gz -C .next/standalone .
 

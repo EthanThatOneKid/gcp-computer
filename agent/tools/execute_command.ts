@@ -18,10 +18,10 @@ export default defineTool({
         input.workDir,
       );
       return result;
-    } catch (error: any) {
+    } catch (error) {
       return {
         stdout: '',
-        stderr: error.message || 'Execution failed',
+        stderr: error instanceof Error ? error.message : 'Execution failed',
         exitCode: 1,
       };
     }

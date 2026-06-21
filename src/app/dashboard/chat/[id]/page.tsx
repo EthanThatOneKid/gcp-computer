@@ -6,6 +6,7 @@ import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
 import ChatSessionView from '@/components/ChatSessionView';
 import type { UIMessage } from '@ai-sdk/react';
+import type { SandboxStatusInfo } from '@/services/sandbox/provider';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,24 +40,24 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const db = getDb();
 
   // Load chat and messages SSR
-  const chat = await db
+  const chat = (await db
     .prepare('SELECT id, title FROM chats WHERE id = ? AND user_id = ?')
-    .get(chatId, userId) as { id: string; title: string } | undefined;
+    .get(chatId, userId)) as { id: string; title: string } | undefined;
 
   if (!chat) {
     redirect('/dashboard');
   }
 
-  const messages = await db
+  const messages = (await db
     .prepare(
       'SELECT id, sender, content, tool_calls, created_at FROM messages WHERE chat_id = ? ORDER BY created_at ASC',
     )
-    .all(chatId) as MessageRow[];
+    .all(chatId)) as MessageRow[];
 
   const parsedMessages = messages.map((msg: MessageRow) => {
     const role = msg.sender === 'user' ? 'user' : msg.sender === 'agent' ? 'assistant' : 'system';
     const parts: Array<{ type: string; [key: string]: unknown }> = [];
-    
+
     if (msg.content) {
       parts.push({
         type: 'text',
@@ -100,7 +101,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
       chatId={chatId}
       initialChatTitle={chat.title}
       initialMessages={parsedMessages}
-      initialSandbox={sandbox as any}
+      initialSandbox={sandbox as SandboxStatusInfo}
       token={session ? 'authenticated' : ''}
     />
   );

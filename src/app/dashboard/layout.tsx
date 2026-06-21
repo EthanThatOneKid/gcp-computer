@@ -19,7 +19,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const db = getDb();
 
   // SSR load user's chats from database
-  let chats: Array<{ id: string; title: string; created_at: string; last_message?: string | null }> = [];
+  let chats: Array<{
+    id: string;
+    title: string;
+    created_at: string;
+    last_message?: string | null;
+  }> = [];
   try {
     chats = (await db
       .prepare(
@@ -29,7 +34,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         WHERE c.user_id = ?
         ORDER BY c.created_at DESC`,
       )
-      .all(userId)) as Array<{ id: string; title: string; created_at: string; last_message?: string | null }>;
+      .all(userId)) as Array<{
+      id: string;
+      title: string;
+      created_at: string;
+      last_message?: string | null;
+    }>;
   } catch (error) {
     console.error('[Dashboard Layout] Failed to load chats SSR:', error);
   }

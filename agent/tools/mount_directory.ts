@@ -19,8 +19,8 @@ export default defineTool({
         success: true,
         message: `Successfully mounted ${input.hostPath} to ${input.sandboxPath}`,
       };
-    } catch (error: any) {
-      return { success: false, error: error.message || 'Mount failed' };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Mount failed' };
     }
   },
 });

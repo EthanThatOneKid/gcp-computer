@@ -13,7 +13,7 @@ export default function LandingPage() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-terracotta)]">
+            <p className="text-xs font-semibold tracking-[0.24em] text-[var(--color-terracotta)]">
               GCP
             </p>
             <h1 className="text-3xl font-medium tracking-tight text-[var(--color-pure-black)] sm:text-4xl">
@@ -27,7 +27,10 @@ export default function LandingPage() {
         </div>
 
         <div className="flex justify-center">
-          <Link href="/login" className="gcp-btn-primary inline-flex min-w-40 justify-center px-5 py-3">
+          <Link
+            href="/login"
+            className="gcp-btn-primary inline-flex min-w-40 justify-center px-5 py-3"
+          >
             <span>Sign In</span>
             <ArrowRight size={16} />
           </Link>

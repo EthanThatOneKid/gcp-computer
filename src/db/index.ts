@@ -53,7 +53,9 @@ async function ensureReady() {
       `);
 
       const migrationsDir = path.join(process.cwd(), 'src/db/migrations');
-      const files = (await fs.readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
+      const files = (await fs.readdir(migrationsDir))
+        .filter((file) => file.endsWith('.sql'))
+        .sort();
 
       for (const file of files) {
         const applied = await activePool.query('SELECT 1 FROM _migrations WHERE name = $1', [file]);
@@ -85,7 +87,10 @@ async function ensureReady() {
   return readyPromise;
 }
 
-async function query<T extends QueryResultRow = QueryResultRow>(sql: string, params: QueryParams = []) {
+async function query<T extends QueryResultRow = QueryResultRow>(
+  sql: string,
+  params: QueryParams = [],
+) {
   await ensureReady();
   return await createPool().query<T>(toPgSql(sql), params as unknown[]);
 }
