@@ -14,17 +14,20 @@ export async function GET() {
   const userId = (session.user as any).id;
   const db = getDb();
 
-  try {
-    const chats = await db
-      .prepare(
-        `SELECT c.id, c.title, c.created_at,
-        (SELECT m.content FROM messages m WHERE m.chat_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message,
-        (SELECT m.created_at FROM messages m WHERE m.chat_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_time
-        FROM chats c
-        WHERE c.user_id = ?
-        ORDER BY COALESCE(last_message_time, c.created_at) DESC`,
-      )
-      .all(userId) as any[];
+    try {
+      const chats = await db
+        .prepare(
+          `SELECT c.id, c.title, c.created_at,
+          (SELECT m.content FROM messages m WHERE m.chat_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message,
+          (SELECT m.created_at FROM messages m WHERE m.chat_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_time
+          FROM chats c
+          WHERE c.user_id = ?
+          ORDER BY COALESCE(
+            (SELECT m2.created_at FROM messages m2 WHERE m2.chat_id = c.id ORDER BY m2.created_at DESC LIMIT 1),
+            c.created_at
+          ) DESC`,
+        )
+        .all(userId) as any[];
 
     return NextResponse.json(chats);
   } catch (error: any) {
