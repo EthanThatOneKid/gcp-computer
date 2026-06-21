@@ -1,4 +1,4 @@
-name: CI
+name: Deploy to GCP VM
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build App
+  deploy:
+    name: Build & Deploy App
     runs-on: ubuntu-latest
 
     steps:
@@ -25,3 +25,51 @@ jobs:
 
       - name: Build project
         run: npm run build
+
+      - name: Package standalone build outputs
+        run: |
+          # Copy public and static assets to the standalone directory
+          cp -r public .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+          
+          # Copy database migrations so they are accessible by getDb() at runtime
+          mkdir -p .next/standalone/src/db/migrations
+          cp -r src/db/migrations/* .next/standalone/src/db/migrations/
+          
+          # Compress the standalone outputs
+          tar -czf build.tar.gz -C .next/standalone .
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Create env file from secrets
+        run: |
+          cat << 'EOF' > .env
+          DATABASE_URL="postgresql://gcp_computer:gcp-computer-secure-pass@localhost:5432/gcp_computer"
+          NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
+          NEXTAUTH_URL="http://8.229.141.54"
+          GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+          GOOGLE_GENERATIVE_AI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
+          GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+          GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+          SANDBOX_PROVIDER="gcp"
+          GCP_PROJECT_ID="gcp-computer-500100"
+          GCP_ZONE="us-west1-a"
+          GOOGLE_APPLICATION_CREDENTIALS="/opt/gcp-computer/gcp-key.json"
+          AGENT_SECRET="${{ secrets.AGENT_SECRET }}"
+          EOF
+
+      - name: Copy deployment files to VM
+        run: |
+          gcloud compute scp build.tar.gz scripts/vm-deploy.sh .env gcp-computer:~/ \
+            --zone=us-west1-a
+
+      - name: Run deployment script on VM
+        run: |
+          gcloud compute ssh gcp-computer --zone=us-west1-a \
+            --command="chmod +x ~/vm-deploy.sh && ~/vm-deploy.sh"

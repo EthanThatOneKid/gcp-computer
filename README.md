@@ -13,7 +13,7 @@ The platform is designed around a modular, unified structure:
 ```mermaid
 graph TD
     A[Next.js App Router Frontend] -->|API Requests & SSE Stream| B[API Route Handlers]
-        B -->|NextAuth / Postgres| C[Neon Postgres]
+        B -->|NextAuth / Postgres| C[Local VM Postgres]
     B -->|Vercel EVE Agent Core| D[Agent Tool Executor]
     D -->|Custom Sandbox Driver| E[Sandbox Manager]
     E -->|Docker Driver| F[Local Docker Containers]
@@ -80,11 +80,15 @@ This project was built for the **GDG Newport Beach Google I/O Extended Hackathon
 - The agent falls back to a deterministic demo response when Gemini is unavailable.
 
 ### Live Demo
-- https://gcp-computer.vercel.app/
+- http://8.229.141.54/ (GCP VM Hosting)
 
 ### Deploying
-- Vercel guide: [docs/vercel-deployment-guide.md](docs/vercel-deployment-guide.md)
-- Legacy GCP guide: [docs/gcp-deployment-guide.md](docs/gcp-deployment-guide.md)
+- The primary deployment path is Google Cloud Platform (GCP) Compute Engine:
+  - Infrastructure Provisioning: [scripts/gcp-provision.ps1](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/scripts/gcp-provision.ps1)
+  - VM Provisioning Script: [scripts/vm-setup.sh](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/scripts/vm-setup.sh)
+  - Deployment Script: [scripts/vm-deploy.sh](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/scripts/vm-deploy.sh)
+  - GitHub Actions Workflow: [.github/workflows/deploy.yml](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/.github/workflows/deploy.yml)
+- Legacy Vercel guide: [docs/vercel-deployment-guide.md](file:///c:/Users/ethan/Documents/GitHub/gcp-computer/docs/vercel-deployment-guide.md)
 
 Smoke test checklist: [docs/local-emulation-checklist.md](docs/local-emulation-checklist.md)
 
