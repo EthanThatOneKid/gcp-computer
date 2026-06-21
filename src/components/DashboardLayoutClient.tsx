@@ -10,7 +10,7 @@ interface ChatItem {
   id: string;
   title: string;
   created_at: string;
-  last_message?: string;
+  last_message?: string | null;
 }
 
 interface DashboardLayoutClientProps {
