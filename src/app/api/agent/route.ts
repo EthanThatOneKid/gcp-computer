@@ -205,22 +205,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 403 });
     }
 
+    // Helper to get text content from message (handles both plain string content and structured parts)
+    const getMessageText = (msg: any): string => {
+      if (!msg) return '';
+      if (typeof msg.content === 'string' && msg.content !== '') {
+        return msg.content;
+      }
+      if (Array.isArray(msg.parts)) {
+        const textPart = msg.parts.find((p: any) => p.type === 'text');
+        if (textPart && typeof textPart.text === 'string') {
+          return textPart.text;
+        }
+      }
+      return '';
+    };
+
     // 3. Save latest user message to DB
     const latestUserMessage = messages[messages.length - 1];
     if (latestUserMessage && latestUserMessage.role === 'user') {
       const userMsgId = uuidv4();
+      const userContent = getMessageText(latestUserMessage);
       await db
         .prepare(
           'INSERT INTO messages (id, chat_id, sender, content, created_at) VALUES (?, ?, ?, ?, ?)',
         )
-        .run(userMsgId, chatId, 'user', latestUserMessage.content, new Date().toISOString());
+        .run(userMsgId, chatId, 'user', userContent, new Date().toISOString());
     }
 
     if (runtime.isLocalEmulation || !runtime.geminiEnabled) {
       return await runLocalDemoTurn({
         chatId,
         sandboxId,
-        prompt: latestUserMessage?.content || '',
+        prompt: getMessageText(latestUserMessage),
       });
     }
 
@@ -234,9 +250,9 @@ Format command outputs or file listings nicely in markdown. Always explain what 
     const result = await streamText({
       model: google('models/gemini-1.5-flash'),
       system: systemPrompt,
-      messages: messages.map((m: MessageInput) => ({
+      messages: messages.map((m: any) => ({
         role: m.role,
-        content: m.content,
+        content: getMessageText(m),
       })),
       stopWhen: isStepCount(10), // Multi-turn tool calling
       tools: {
