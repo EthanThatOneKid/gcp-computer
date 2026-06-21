@@ -252,7 +252,7 @@ Use the provided tools to run commands, edit files, and check execution outputs 
 Format command outputs or file listings nicely in markdown. Always explain what you did and summarize command results.`;
 
     const result = await streamText({
-      model: google('models/gemini-1.5-flash'),
+      model: google('gemini-2.0-flash'),
       system: systemPrompt,
       messages: messages.map((m: any) => ({
         role: m.role,
