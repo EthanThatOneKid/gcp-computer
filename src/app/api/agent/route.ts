@@ -5,9 +5,13 @@ import { getRuntimeConfig } from '@/config/runtime';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
 import { streamText, tool, toUIMessageStream, createUIMessageStreamResponse, isStepCount } from 'ai';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
+});
 
 interface SessionUser {
   name?: string | null;
