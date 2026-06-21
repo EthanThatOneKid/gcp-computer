@@ -31,6 +31,19 @@ export default function DashboardLayoutClient({
   const router = useRouter();
   const pathname = usePathname();
 
+  React.useEffect(() => {
+    const handleChatRenamed = (e: Event) => {
+      const { id, title } = (e as CustomEvent).detail;
+      setChats((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, title } : c))
+      );
+    };
+    window.addEventListener('chat-renamed', handleChatRenamed);
+    return () => {
+      window.removeEventListener('chat-renamed', handleChatRenamed);
+    };
+  }, []);
+
   const getInitials = (email: string) => {
     if (!email) return 'U';
     return email.split('@')[0].substring(0, 2).toUpperCase();

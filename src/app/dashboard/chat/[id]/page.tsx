@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/auth';
 import { getDb } from '@/db/index';
 import { sandboxManager } from '@/services/sandbox/manager';
-import ChatWindowClient from '@/components/ChatWindowClient';
-import SandboxStatusClient from '@/components/SandboxStatusClient';
+import ChatSessionView from '@/components/ChatSessionView';
 import type { UIMessage } from '@ai-sdk/react';
 
 export const dynamic = 'force-dynamic';
@@ -97,20 +96,12 @@ export default async function ChatPage({ params }: ChatPageProps) {
   const sandbox = await sandboxManager.getOrCreateSandboxForChat(chatId);
 
   return (
-    <div className="gcp-shell flex flex-1 overflow-hidden">
-      {/* Center Chat window */}
-      <div className="flex h-full flex-1 flex-col border-r border-[rgba(232,230,228,0.08)]">
-        <ChatWindowClient
-          chatId={chatId}
-          chatTitle={chat.title}
-          initialMessages={parsedMessages}
-          sandboxId={sandbox.id}
-          token={session ? 'authenticated' : ''}
-        />
-      </div>
-
-      {/* Right Sandbox control sidebar */}
-      <SandboxStatusClient initialSandbox={sandbox} token={session ? 'authenticated' : ''} />
-    </div>
+    <ChatSessionView
+      chatId={chatId}
+      initialChatTitle={chat.title}
+      initialMessages={parsedMessages}
+      initialSandbox={sandbox as any}
+      token={session ? 'authenticated' : ''}
+    />
   );
 }

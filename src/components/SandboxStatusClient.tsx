@@ -30,15 +30,27 @@ interface SandboxStatusInfo {
 }
 
 interface SandboxStatusClientProps {
-  initialSandbox: SandboxStatusInfo;
+  sandbox: SandboxStatusInfo;
+  setSandbox: React.Dispatch<React.SetStateAction<SandboxStatusInfo>>;
+  loading: boolean;
+  error: string;
+  setError: (err: string) => void;
+  handleRefresh: () => Promise<void>;
+  handleHibernate: () => Promise<void>;
+  handleWakeup: () => Promise<void>;
+  handleMount: (hostPath: string, sandboxPath: string) => Promise<boolean>;
   token?: string;
 }
 
-export default function SandboxStatusClient({ initialSandbox }: SandboxStatusClientProps) {
-  const [sandbox, setSandbox] = useState<SandboxStatusInfo>(initialSandbox);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
+export default function SandboxStatusClient({
+  sandbox,
+  loading,
+  error,
+  handleRefresh,
+  handleHibernate,
+  handleWakeup,
+  handleMount,
+}: SandboxStatusClientProps) {
   // Mount Form State
   const [hostPath, setHostPath] = useState('');
   const [sandboxPath, setSandboxPath] = useState('');
@@ -54,130 +66,16 @@ export default function SandboxStatusClient({ initialSandbox }: SandboxStatusCli
   } | null>(null);
   const termEndRef = useRef<HTMLDivElement>(null);
 
-  // Poll status while provisioning or waking up
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-
-    const checkStatus = async () => {
-      try {
-        const res = await fetch(`/api/sandboxes/${sandbox.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSandbox(data);
-          if (data.status !== 'provisioning') {
-            clearInterval(timer);
-          }
-        }
-      } catch (err) {
-        console.error('Failed status check polling:', err);
-      }
-    };
-
-    if (sandbox.status === 'provisioning') {
-      timer = setInterval(checkStatus, 3000);
-    }
-
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [sandbox.status, sandbox.id]);
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/sandboxes/${sandbox.id}`);
-      if (!res.ok) {
-        throw new Error('Failed to refresh status');
-      }
-      const data = await res.json();
-      setSandbox(data);
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Refresh failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleHibernate = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to hibernate this sandbox instance? Running jobs will be stopped.',
-      )
-    ) {
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/sandboxes/sleep', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sandboxId: sandbox.id }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to hibernate sandbox');
-      }
-      // Set local state to stopped
-      setSandbox((prev) => ({ ...prev, status: 'stopped' }));
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Hibernation failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleWakeup = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      // Just fetching/getting or initiating connection triggers wakeup
-      const res = await fetch(`/api/sandboxes/${sandbox.id}`);
-      if (!res.ok) {
-        throw new Error('Failed to wake up sandbox');
-      }
-      const data = await res.json();
-      setSandbox(data);
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Wakeup failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMount = async (e: React.FormEvent) => {
+  const handleMountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hostPath.trim() || !sandboxPath.trim()) return;
 
     setMountLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/sandboxes/mount', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sandboxId: sandbox.id,
-          hostPath: hostPath.trim(),
-          sandboxPath: sandboxPath.trim(),
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Mount failed');
-      }
-
-      const data = await res.json();
-      if (data.details) {
-        setSandbox(data.details);
-      }
+    const success = await handleMount(hostPath, sandboxPath);
+    setMountLoading(false);
+    if (success) {
       setHostPath('');
       setSandboxPath('');
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Directory mount failed');
-    } finally {
-      setMountLoading(false);
     }
   };
 
@@ -210,10 +108,10 @@ export default function SandboxStatusClient({ initialSandbox }: SandboxStatusCli
       setTimeout(() => {
         termEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 50);
-    } catch (error: unknown) {
+    } catch (err: unknown) {
       setTermOutput({
         stdout: '',
-        stderr: error instanceof Error ? error.message : 'Execution failed',
+        stderr: err instanceof Error ? err.message : 'Execution failed',
         exitCode: -1,
       });
     } finally {
@@ -361,7 +259,7 @@ export default function SandboxStatusClient({ initialSandbox }: SandboxStatusCli
 
           {/* Mount form */}
           <form
-            onSubmit={handleMount}
+            onSubmit={handleMountSubmit}
             className="gcp-panel space-y-2 p-3"
           >
             <div className="space-y-1">

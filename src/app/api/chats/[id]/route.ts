@@ -92,3 +92,41 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ error: 'Failed to delete chat' }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const userId = (session.user as any).id;
+  const { id: chatId } = await params;
+  const db = getDb();
+
+  try {
+    const { title } = await req.json();
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    // Verify chat ownership
+    const chat = await db
+      .prepare('SELECT id FROM chats WHERE id = ? AND user_id = ?')
+      .get(chatId, userId);
+
+    if (!chat) {
+      return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
+    }
+
+    // Update title
+    await db
+      .prepare('UPDATE chats SET title = ? WHERE id = ?')
+      .run(title.trim(), chatId);
+
+    return NextResponse.json({ success: true, title: title.trim() });
+  } catch (error: any) {
+    console.error('[API Chat Detail] Rename error:', error);
+    return NextResponse.json({ error: 'Failed to rename chat' }, { status: 500 });
+  }
+}
+

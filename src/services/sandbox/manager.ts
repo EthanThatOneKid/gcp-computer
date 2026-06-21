@@ -102,6 +102,55 @@ class SandboxManager {
     }
   }
 
+  async startSandbox(sandboxId: string, wait = false): Promise<void> {
+    const db = getDb();
+    
+    // First, let's update the status in the DB to provisioning
+    await db.prepare(
+      `UPDATE sandbox_instances SET status = 'provisioning', last_active_at = ? WHERE id = ?`
+    ).run(new Date().toISOString(), sandboxId);
+
+    const doStart = async () => {
+      try {
+        console.log(`[SandboxManager] Waking up sandbox ${sandboxId}...`);
+        await this.provider.startSandbox(sandboxId);
+        
+        // Fetch IP address and update DB with 'running' status and cached IP address
+        const ipAddress = this.provider.getIpAddress
+          ? await this.provider.getIpAddress(sandboxId)
+          : undefined;
+
+        // Fetch connection_info
+        const row = await db.prepare(`SELECT connection_info FROM sandbox_instances WHERE id = ?`).get(sandboxId) as { connection_info: string } | undefined;
+        let connInfo: any = {};
+        if (row?.connection_info) {
+          try {
+            connInfo = JSON.parse(row.connection_info);
+          } catch (e) {}
+        }
+        if (ipAddress) {
+          connInfo.ipAddress = ipAddress;
+        }
+        
+        await db.prepare(
+          `UPDATE sandbox_instances SET status = 'running', connection_info = ?, last_active_at = ? WHERE id = ?`
+        ).run(JSON.stringify(connInfo), new Date().toISOString(), sandboxId);
+        
+        console.log(`[SandboxManager] Sandbox ${sandboxId} successfully started & IP updated.`);
+      } catch (err) {
+        await db.prepare(`UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`).run(sandboxId);
+        console.error(`[SandboxManager] startSandbox failed for ${sandboxId}:`, err);
+        throw err;
+      }
+    };
+
+    if (wait) {
+      await doStart();
+    } else {
+      void doStart();
+    }
+  }
+
   async getOrCreateSandboxForChat(chatId: string): Promise<SandboxStatusInfo> {
     const db = getDb();
 
@@ -130,16 +179,17 @@ class SandboxManager {
       console.log(`[SandboxManager] Provisioning new ${displayProviderType} sandbox for chat ${chatId}`);
 
       // Update DB to provisioning immediately
-      const connInfo = JSON.stringify({
+      const connInfoObj = {
         createdAt: new Date().toISOString(),
         hostWorkspace: `sandboxes/${sandboxId}`,
-      });
+      };
+      const connInfoStr = JSON.stringify(connInfoObj);
 
       await transaction(async (client) => {
         await client.query(
           `INSERT INTO sandbox_instances (id, provider, status, connection_info, last_active_at)
            VALUES ($1, $2, $3, $4, $5)`,
-          [sandboxId, providerType, 'provisioning', connInfo, new Date().toISOString()],
+          [sandboxId, providerType, 'provisioning', connInfoStr, new Date().toISOString()],
         );
 
         await client.query(`INSERT INTO chat_sandboxes (chat_id, sandbox_id) VALUES ($1, $2)`, [
@@ -149,20 +199,27 @@ class SandboxManager {
       });
 
       // Async creation so we don't block the UI
-      this.provider
-        .createSandbox(sandboxId)
-        .then(() => {
-          void db.prepare(
-            `UPDATE sandbox_instances SET status = 'running', last_active_at = ? WHERE id = ?`,
-          ).run(new Date().toISOString(), sandboxId);
+      const doCreate = async () => {
+        try {
+          await this.provider.createSandbox(sandboxId);
+          const ipAddress = this.provider.getIpAddress
+            ? await this.provider.getIpAddress(sandboxId)
+            : undefined;
+
+          const updatedConnObj = { ...connInfoObj, ipAddress };
+          await db.prepare(
+            `UPDATE sandbox_instances SET status = 'running', connection_info = ?, last_active_at = ? WHERE id = ?`,
+          ).run(JSON.stringify(updatedConnObj), new Date().toISOString(), sandboxId);
           console.log(`[SandboxManager] Sandbox ${sandboxId} running.`);
-        })
-        .catch((err) => {
-          void db.prepare(`UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`).run(
+        } catch (err) {
+          await db.prepare(`UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`).run(
             sandboxId,
           );
           console.error(`[SandboxManager] Sandbox ${sandboxId} creation failed:`, err);
-        });
+        }
+      };
+
+      void doCreate();
 
       return {
         id: sandboxId,
@@ -173,49 +230,31 @@ class SandboxManager {
       };
     } else {
       sandboxId = sandbox.id;
-
-      if (sandbox.status === 'stopped') {
-        console.log(`[SandboxManager] Waking up sandbox ${sandboxId}...`);
-
-        void db.prepare(
-          `UPDATE sandbox_instances SET status = 'provisioning', last_active_at = ? WHERE id = ?`,
-        ).run(new Date().toISOString(), sandboxId);
-
-        this.provider
-          .startSandbox(sandboxId)
-          .then(() => {
-            void db.prepare(
-              `UPDATE sandbox_instances SET status = 'running', last_active_at = ? WHERE id = ?`,
-            ).run(new Date().toISOString(), sandboxId);
-          })
-          .catch((err) => {
-            void db.prepare(`UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`).run(
-              sandboxId,
-            );
-            console.error(`[SandboxManager] Wakeup failed for ${sandboxId}:`, err);
-          });
-      }
     }
 
     void this.touchSandbox(sandboxId);
 
-    const currentStatus = await this.provider.getSandboxStatus(sandboxId);
+    // Get mounts
     let mounts: SandboxMount[] = [];
     if ((this.provider as any).getMounts) {
       mounts = (this.provider as any).getMounts(sandboxId);
     }
 
-    const ipAddress = this.provider.getIpAddress
-      ? await this.provider.getIpAddress(sandboxId)
-      : undefined;
+    // Read cached connection_info
+    let connInfo: any = {};
+    if (sandbox.connection_info) {
+      try {
+        connInfo = JSON.parse(sandbox.connection_info);
+      } catch (e) {}
+    }
 
     return {
       id: sandboxId,
       provider: sandbox.provider as any,
-      status: currentStatus,
+      status: sandbox.status as any,
       mounts,
-      lastActive: this.activeTimestamps.get(sandboxId) || Date.now(),
-      ipAddress,
+      lastActive: this.activeTimestamps.get(sandboxId) || new Date(sandbox.last_active_at + 'Z').getTime(),
+      ipAddress: connInfo.ipAddress,
     };
   }
 
@@ -242,29 +281,56 @@ class SandboxManager {
   async getSandboxDetails(sandboxId: string): Promise<SandboxStatusInfo> {
     const db = getDb();
     const sandbox = await db
-      .prepare(`SELECT provider, status FROM sandbox_instances WHERE id = ?`)
-      .get(sandboxId) as { provider: string; status: string } | undefined;
+      .prepare(`SELECT provider, status, connection_info, last_active_at FROM sandbox_instances WHERE id = ?`)
+      .get(sandboxId) as { provider: string; status: string; connection_info: string; last_active_at: string } | undefined;
 
     if (!sandbox) {
       throw new Error(`Sandbox ${sandboxId} not found`);
     }
 
     const currentStatus = await this.provider.getSandboxStatus(sandboxId);
+    
     let mounts: SandboxMount[] = [];
     if ((this.provider as any).getMounts) {
       mounts = (this.provider as any).getMounts(sandboxId);
     }
-    const ipAddress = this.provider.getIpAddress
-      ? await this.provider.getIpAddress(sandboxId)
-      : undefined;
+    
+    let ipAddress: string | undefined = undefined;
+    if (currentStatus === 'running' && this.provider.getIpAddress) {
+      ipAddress = await this.provider.getIpAddress(sandboxId);
+    }
+
+    // Read/update cached connection_info
+    let connInfo: any = {};
+    if (sandbox.connection_info) {
+      try {
+        connInfo = JSON.parse(sandbox.connection_info);
+      } catch (e) {}
+    }
+
+    let updated = false;
+    if (currentStatus !== sandbox.status) {
+      sandbox.status = currentStatus;
+      updated = true;
+    }
+    if (ipAddress && connInfo.ipAddress !== ipAddress) {
+      connInfo.ipAddress = ipAddress;
+      updated = true;
+    }
+
+    if (updated) {
+      await db.prepare(
+        `UPDATE sandbox_instances SET status = ?, connection_info = ?, last_active_at = ? WHERE id = ?`
+      ).run(sandbox.status, JSON.stringify(connInfo), new Date().toISOString(), sandboxId);
+    }
 
     return {
       id: sandboxId,
       provider: sandbox.provider as any,
       status: currentStatus,
       mounts,
-      lastActive: this.activeTimestamps.get(sandboxId) || Date.now(),
-      ipAddress,
+      lastActive: this.activeTimestamps.get(sandboxId) || new Date(sandbox.last_active_at + 'Z').getTime(),
+      ipAddress: connInfo.ipAddress || ipAddress,
     };
   }
 

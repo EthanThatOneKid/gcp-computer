@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useChat, UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { Send, Terminal, FileText, HardDrive, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Terminal, FileText, HardDrive, CheckCircle2, XCircle, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 
 interface ChatWindowClientProps {
   chatId: string;
@@ -11,6 +11,8 @@ interface ChatWindowClientProps {
   initialMessages: UIMessage[];
   sandboxId: string;
   token: string;
+  sandboxStatus: string;
+  onRenameChat: (newTitle: string) => Promise<boolean>;
 }
 
 interface ToolLogItemProps {
@@ -143,9 +145,37 @@ export default function ChatWindowClient({
   chatTitle,
   initialMessages,
   sandboxId,
+  sandboxStatus,
+  onRenameChat,
 }: ChatWindowClientProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(chatTitle);
+
+  useEffect(() => {
+    setEditTitle(chatTitle);
+  }, [chatTitle]);
+
+  const handleSaveTitle = async () => {
+    if (editTitle.trim() && editTitle.trim() !== chatTitle) {
+      const success = await onRenameChat(editTitle.trim());
+      if (success) {
+        setIsEditing(false);
+      }
+    } else {
+      setIsEditing(false);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle();
+    } else if (e.key === 'Escape') {
+      setEditTitle(chatTitle);
+      setIsEditing(false);
+    }
+  };
 
   const transport = new DefaultChatTransport({
     api: '/api/agent',
@@ -186,9 +216,35 @@ export default function ChatWindowClient({
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-terracotta)]">
             Session
           </p>
-          <h2 className="text-xl font-medium tracking-tight text-[var(--color-pristine-white)]">
-            {chatTitle}
-          </h2>
+          {isEditing ? (
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={handleTitleKeyDown}
+                onBlur={handleSaveTitle}
+                className="rounded border border-[rgba(210,190,255,0.4)] bg-[rgba(0,0,0,0.3)] px-2 py-0.5 text-lg font-medium text-[var(--color-pristine-white)] outline-none focus:border-[var(--color-lavender)]"
+                autoFocus
+              />
+            </div>
+          ) : (
+            <div className="group mt-1 flex items-center gap-2">
+              <h2
+                className="cursor-pointer text-xl font-medium tracking-tight text-[var(--color-pristine-white)] hover:text-[var(--color-lavender)] transition-all"
+                onClick={() => setIsEditing(true)}
+              >
+                {chatTitle}
+              </h2>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="opacity-0 group-hover:opacity-100 p-1 text-[rgba(255,255,255,0.46)] hover:text-[var(--color-pristine-white)] transition-all"
+                title="Rename session"
+              >
+                <Pencil size={14} />
+              </button>
+            </div>
+          )}
         </div>
         <span className="rounded-full border border-[rgba(232,230,228,0.08)] px-3 py-1 text-xs text-[rgba(255,255,255,0.64)]">
           Sandbox: {sandboxId.substring(0, 8)}...
@@ -287,17 +343,33 @@ export default function ChatWindowClient({
 
       {/* Input form */}
       <form onSubmit={handleSubmit} className="shrink-0">
-        <div className="gcp-panel flex gap-3 p-3 transition-all focus-within:border-[rgba(210,190,255,0.35)] focus-within:shadow-[0_0_15px_rgba(210,190,255,0.08)]">
+        <div className={`gcp-panel flex gap-3 p-3 transition-all ${
+          sandboxStatus !== 'running'
+            ? 'opacity-60 bg-[rgba(255,255,255,0.01)] cursor-not-allowed'
+            : 'focus-within:border-[rgba(210,190,255,0.35)] focus-within:shadow-[0_0_15px_rgba(210,190,255,0.08)]'
+        }`}>
           <textarea
-            className="max-h-24 h-6 flex-1 resize-none bg-transparent text-sm leading-relaxed text-[var(--color-pristine-white)] outline-none placeholder:text-[rgba(255,255,255,0.4)]"
-            placeholder="Type your message or run prompt..."
+            className={`max-h-24 h-6 flex-1 resize-none bg-transparent text-sm leading-relaxed text-[var(--color-pristine-white)] outline-none placeholder:text-[rgba(255,255,255,0.4)] ${
+              sandboxStatus !== 'running' ? 'cursor-not-allowed' : ''
+            }`}
+            placeholder={
+              sandboxStatus === 'provisioning'
+                ? 'Waiting for sandbox to connect...'
+                : sandboxStatus === 'failed'
+                ? 'Sandbox failed to start. Click Wake Up to retry.'
+                : sandboxStatus === 'stopped'
+                ? 'Sandbox is offline. Click Wake Up to start.'
+                : 'Type your message or run prompt...'
+            }
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
+            disabled={isLoading || sandboxStatus !== 'running'}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSubmit(e);
+                if (sandboxStatus === 'running') {
+                  handleSubmit(e);
+                }
               }
             }}
           />
@@ -312,7 +384,7 @@ export default function ChatWindowClient({
           ) : (
             <button 
               type="submit" 
-              disabled={!input.trim()}
+              disabled={!input.trim() || sandboxStatus !== 'running'}
               className="flex items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-lavender)] p-2 text-[var(--color-deep-black)] transition-all hover:opacity-95 disabled:pointer-events-none disabled:bg-transparent disabled:text-[rgba(255,255,255,0.3)]"
             >
               <Send size={14} />
