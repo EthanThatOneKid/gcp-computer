@@ -2,6 +2,9 @@
 set -e
 
 echo "=== Extracting Build ==="
+if [ -d /opt/gcp-computer ]; then
+  sudo find /opt/gcp-computer -mindepth 1 -maxdepth 1 ! -name '.env' ! -name 'gcp-key.json' -exec rm -rf {} +
+fi
 sudo tar -xzf $HOME/build.tar.gz -C /opt/gcp-computer
 sudo chown -R ubuntu:ubuntu /opt/gcp-computer
 
