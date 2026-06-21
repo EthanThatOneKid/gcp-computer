@@ -13,21 +13,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect('/');
   }
 
-  const userId = (session.user as any).id;
+  const userId = (session.user as { id: string }).id;
   const db = getDb();
 
   // SSR load user's chats from database
-  let chats: any[] = [];
+  let chats: Array<{ id: string; title: string; created_at: string; last_message?: string | null }> = [];
   try {
     chats = db
       .prepare(
         `SELECT c.id, c.title, c.created_at,
        (SELECT m.content FROM messages m WHERE m.chat_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message
-       FROM chats c
-       WHERE c.user_id = ?
-       ORDER BY c.created_at DESC`,
+        FROM chats c
+        WHERE c.user_id = ?
+        ORDER BY c.created_at DESC`,
       )
-      .all(userId);
+      .all(userId) as Array<{ id: string; title: string; created_at: string; last_message?: string | null }>;
   } catch (error) {
     console.error('[Dashboard Layout] Failed to load chats SSR:', error);
   }
@@ -35,7 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <DashboardLayoutClient
       initialChats={chats}
-      userEmail={session.user.email || 'developer@gcp-computer.dev'}
+      userEmail={session.user.email || 'developer@gcp.dev'}
     >
       {children}
     </DashboardLayoutClient>

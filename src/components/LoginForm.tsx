@@ -15,7 +15,7 @@ export default function LoginForm() {
     setError('');
     try {
       await signIn('google', { callbackUrl: '/dashboard' });
-    } catch (err: any) {
+    } catch {
       setError('Google Sign-in failed. Please try again.');
       setLoading(false);
     }
@@ -41,8 +41,8 @@ export default function LoginForm() {
       if (res?.error) {
         throw new Error(res.error);
       }
-    } catch (err: any) {
-      setError(err.message || 'Developer login failed.');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Developer login failed.');
       setLoading(false);
     }
   };
@@ -50,7 +50,7 @@ export default function LoginForm() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+        <div className="gcp-badge-error items-start rounded-[var(--radius-md)] p-3 text-sm">
           <ShieldAlert size={16} className="shrink-0" />
           <span>{error}</span>
         </div>
@@ -60,31 +60,31 @@ export default function LoginForm() {
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 font-semibold text-gray-200 transition-all hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-50"
+        className="gcp-btn-secondary w-full px-4 disabled:pointer-events-none disabled:opacity-50"
       >
         <Chrome size={18} />
         <span>Sign in with Google</span>
       </button>
 
       {/* Divider */}
-      <div className="flex items-center justify-center gap-3 text-xs text-gray-500 uppercase">
-        <div className="h-[1px] flex-1 bg-white/10" />
+      <div className="flex items-center justify-center gap-3 text-xs uppercase tracking-[0.18em] text-[var(--color-medium-gray)]">
+        <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
         <span>or use developer fallback</span>
-        <div className="h-[1px] flex-1 bg-white/10" />
+        <div className="h-px flex-1 bg-[var(--color-lighter-gray)]" />
       </div>
 
       {/* Credentials form */}
       <form onSubmit={handleMockLogin} className="space-y-4">
         <div className="space-y-1.5">
-          <label htmlFor="dev-email" className="text-xs font-semibold text-gray-400">
+          <label htmlFor="dev-email" className="text-xs font-medium text-[var(--color-medium-gray)]">
             Email address
           </label>
           <input
             id="dev-email"
             type="email"
-            placeholder="developer@gcp-computer.dev"
+            placeholder="developer@gcp.dev"
             disabled={loading}
-            className="w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="gcp-input-line px-0 py-2 text-sm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -92,7 +92,7 @@ export default function LoginForm() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="dev-name" className="text-xs font-semibold text-gray-400">
+          <label htmlFor="dev-name" className="text-xs font-medium text-[var(--color-medium-gray)]">
             Name (Optional)
           </label>
           <input
@@ -100,7 +100,7 @@ export default function LoginForm() {
             type="text"
             placeholder="John Doe"
             disabled={loading}
-            className="w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="gcp-input-line px-0 py-2 text-sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -109,7 +109,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading || !email.trim()}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 font-semibold text-white transition-all hover:opacity-95 disabled:pointer-events-none disabled:opacity-50"
+          className="gcp-btn-primary w-full justify-center disabled:pointer-events-none disabled:opacity-50"
         >
           <span>{loading ? 'Logging in...' : 'Developer Login'}</span>
           <ArrowRight size={16} />

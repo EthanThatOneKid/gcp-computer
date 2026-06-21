@@ -95,37 +95,41 @@ function ToolLogItem({ tool }: ToolLogItemProps) {
   };
 
   return (
-    <div className="rounded-lg border border-white/5 bg-black/40 overflow-hidden text-xs font-mono">
+    <div className="overflow-hidden rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.25)] font-mono text-xs">
       <div 
-         className="flex items-center justify-between px-3 py-2 cursor-pointer bg-white/[0.02] hover:bg-white/[0.05] transition-all"
+          className="flex cursor-pointer items-center justify-between bg-[rgba(255,255,255,0.03)] px-3 py-2 transition-all hover:bg-[rgba(255,255,255,0.06)]"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2 overflow-hidden">
           {tool.result ? (
             isSuccess ? (
-              <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+              <CheckCircle2 size={13} className="shrink-0 text-[var(--color-lavender)]" />
             ) : (
-              <XCircle size={13} className="text-red-400 shrink-0" />
+              <XCircle size={13} className="shrink-0 text-[var(--color-danger)]" />
             )
           ) : (
-            <div className="h-3 w-3 rounded-full border-2 border-t-transparent border-blue-400 animate-spin shrink-0" />
+            <div className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-[var(--color-lavender)] border-t-transparent" />
           )}
-          <span className="flex items-center gap-1.5 font-bold text-blue-300">
+          <span className="flex items-center gap-1.5 font-semibold text-[var(--color-lavender)]">
             {getToolIcon(tool.toolName)}
             {tool.toolName}
           </span>
-          <span className="text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">
+          <span className="max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap text-[rgba(255,255,255,0.56)]">
             : {formatArgs(tool.args)}
           </span>
         </div>
-        {expanded ? <ChevronUp size={13} className="text-gray-500" /> : <ChevronDown size={13} className="text-gray-500" />}
+        {expanded ? (
+          <ChevronUp size={13} className="text-[rgba(255,255,255,0.46)]" />
+        ) : (
+          <ChevronDown size={13} className="text-[rgba(255,255,255,0.46)]" />
+        )}
       </div>
       {expanded && (
-        <div className="p-3 border-t border-white/5 space-y-2 bg-[#090d16]">
-          <div className="text-yellow-200/90">
+        <div className="space-y-2 border-t border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.16)] p-3">
+          <div className="text-[rgba(210,190,255,0.9)]">
             $ {tool.toolName === 'execute_command' ? tool.args?.command : `${tool.toolName}(${JSON.stringify(tool.args)})`}
           </div>
-          <pre className="text-gray-300 overflow-auto max-h-60 p-2 rounded bg-black/50 border border-white/[0.03] whitespace-pre-wrap">
+          <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded-[var(--radius-sm)] border border-[rgba(232,230,228,0.06)] bg-[rgba(0,0,0,0.24)] p-2 text-[rgba(255,255,255,0.82)]">
             <code>{getOutputText(tool.result)}</code>
           </pre>
         </div>
@@ -175,22 +179,46 @@ export default function ChatWindowClient({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden p-6 gap-6 bg-[#0b0f17]">
+    <div className="gcp-shell flex h-full flex-1 flex-col gap-6 overflow-hidden p-6">
       {/* Header */}
-      <div className="flex justify-between items-center border-b border-white/5 pb-4 shrink-0">
-        <h2 className="text-xl font-bold text-gray-100">{chatTitle}</h2>
-        <span className="text-xs text-gray-500 font-mono">Sandbox: {sandboxId.substring(0, 8)}...</span>
+      <div className="flex shrink-0 items-center justify-between border-b border-[rgba(232,230,228,0.08)] pb-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-terracotta)]">
+            Session
+          </p>
+          <h2 className="text-xl font-medium tracking-tight text-[var(--color-pristine-white)]">
+            {chatTitle}
+          </h2>
+        </div>
+        <span className="rounded-full border border-[rgba(232,230,228,0.08)] px-3 py-1 text-xs text-[rgba(255,255,255,0.64)]">
+          Sandbox: {sandboxId.substring(0, 8)}...
+        </span>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-5 pr-2">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-8 space-y-4">
-            <h1 className="text-2xl font-bold text-gray-200">Sandbox Agent Console</h1>
-            <p className="max-w-md text-sm">Ask the agent to execute shell tasks, create files, or mount external volumes directly inside your Compute Engine VM.</p>
-            <div className="flex flex-col gap-2 text-xs opacity-75 max-w-sm">
-              <div className="rounded-lg bg-white/5 p-2 text-left cursor-pointer hover:bg-white/10" onClick={() => setInput('Create a Python server script and test it.')}>💡 "Create a Python server script and test it."</div>
-              <div className="rounded-lg bg-white/5 p-2 text-left cursor-pointer hover:bg-white/10" onClick={() => setInput('Run git clone and install dependencies.')}>💡 "Run git clone and install dependencies."</div>
+          <div className="flex h-full flex-col items-center justify-center space-y-4 p-8 text-center text-[rgba(255,255,255,0.68)]">
+            <h1 className="text-2xl font-medium tracking-tight text-[var(--color-pristine-white)]">
+              Sandbox Agent Console
+            </h1>
+            <p className="max-w-md text-sm leading-6">
+              Ask the agent to execute shell tasks, create files, or mount external volumes inside
+              your Compute Engine VM.
+            </p>
+            <div className="flex max-w-sm flex-col gap-2 text-xs">
+              <div
+                className="cursor-pointer rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.08)] bg-[rgba(255,255,255,0.04)] p-2 text-left hover:bg-[rgba(210,190,255,0.08)]"
+                onClick={() => setInput('Create a Python server script and test it.')}
+              >
+                💡 &ldquo;Create a Python server script and test it.&rdquo;
+              </div>
+              <div
+                className="cursor-pointer rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.08)] bg-[rgba(255,255,255,0.04)] p-2 text-left hover:bg-[rgba(210,190,255,0.08)]"
+                onClick={() => setInput('Run git clone and install dependencies.')}
+              >
+                💡 &ldquo;Run git clone and install dependencies.&rdquo;
+              </div>
             </div>
           </div>
         )}
@@ -198,18 +226,18 @@ export default function ChatWindowClient({
         {messages.map((msg) => (
           <div 
             key={msg.id} 
-            className={`flex flex-col max-w-[85%] ${
+            className={`flex max-w-[85%] flex-col ${
               msg.role === 'user' ? 'self-end' : 'self-start'
             }`}
           >
-            <span className="text-[10px] font-semibold text-gray-500 mb-1 px-1">
+            <span className="mb-1 px-1 text-[10px] font-semibold text-[rgba(255,255,255,0.48)]">
               {msg.role === 'user' ? 'You' : 'Agent'}
             </span>
             <div 
-              className={`rounded-2xl px-4 py-3 text-sm leading-relaxed border ${
+              className={`rounded-2xl border px-4 py-3 text-sm leading-relaxed ${
                 msg.role === 'user' 
-                  ? 'bg-blue-600 border-blue-500 text-white rounded-tr-sm' 
-                  : 'bg-white/5 border-white/5 text-gray-200 rounded-tl-sm'
+                  ? 'gcp-chat-bubble-user rounded-tr-sm' 
+                  : 'gcp-chat-bubble-assistant rounded-tl-sm'
               }`}
             >
               <div className="space-y-3">
@@ -223,7 +251,7 @@ export default function ChatWindowClient({
                   }
                   if (part.type === 'reasoning') {
                     return (
-                      <div key={pIdx} className="italic text-gray-400 bg-white/[0.02] border border-white/5 rounded-lg p-2.5 my-1 text-xs font-mono">
+                      <div key={pIdx} className="my-1 rounded-[var(--radius-md)] border border-[rgba(232,230,228,0.08)] bg-[rgba(255,255,255,0.03)] p-2.5 font-mono text-xs italic text-[rgba(255,255,255,0.64)]">
                         {part.text}
                       </div>
                     );
@@ -243,7 +271,7 @@ export default function ChatWindowClient({
                     };
                     
                     return (
-                      <div key={pIdx} className="mt-2 bg-black/10 rounded-lg">
+                      <div key={pIdx} className="mt-2 rounded-[var(--radius-md)] bg-[rgba(0,0,0,0.18)]">
                         <ToolLogItem tool={toolLog} />
                       </div>
                     );
@@ -259,9 +287,9 @@ export default function ChatWindowClient({
 
       {/* Input form */}
       <form onSubmit={handleSubmit} className="shrink-0">
-        <div className="flex gap-3 bg-[#0f1422] border border-white/5 p-3 rounded-xl focus-within:border-blue-500 focus-within:shadow-[0_0_15px_rgba(59,130,246,0.1)] transition-all">
+        <div className="gcp-panel flex gap-3 p-3 transition-all focus-within:border-[rgba(210,190,255,0.35)] focus-within:shadow-[0_0_15px_rgba(210,190,255,0.08)]">
           <textarea
-            className="flex-1 bg-transparent resize-none outline-none text-sm text-gray-200 placeholder-gray-600 h-6 max-h-24 leading-relaxed"
+            className="max-h-24 h-6 flex-1 resize-none bg-transparent text-sm leading-relaxed text-[var(--color-pristine-white)] outline-none placeholder:text-[rgba(255,255,255,0.4)]"
             placeholder="Type your message or run prompt..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -277,15 +305,15 @@ export default function ChatWindowClient({
             <button 
               type="button" 
               onClick={() => stop()}
-              className="flex items-center justify-center p-2 rounded-lg bg-red-600 hover:opacity-95 text-white transition-all"
+              className="flex items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-danger)] p-2 text-[var(--color-pristine-white)] transition-all hover:opacity-95"
             >
-              <div className="h-3 w-3 bg-white rounded-sm animate-pulse" />
+              <div className="h-3 w-3 animate-pulse rounded-sm bg-white" />
             </button>
           ) : (
             <button 
               type="submit" 
               disabled={!input.trim()}
-              className="flex items-center justify-center p-2 rounded-lg bg-blue-500 hover:opacity-95 text-white disabled:bg-transparent disabled:text-gray-600 disabled:pointer-events-none transition-all"
+              className="flex items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-lavender)] p-2 text-[var(--color-deep-black)] transition-all hover:opacity-95 disabled:pointer-events-none disabled:bg-transparent disabled:text-[rgba(255,255,255,0.3)]"
             >
               <Send size={14} />
             </button>

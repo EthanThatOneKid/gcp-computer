@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { Menu, Plus, MessageSquare, Trash2, LogOut, Terminal } from 'lucide-react';
@@ -49,10 +49,6 @@ export default function DashboardLayoutClient({
     }
   };
 
-  useEffect(() => {
-    fetchChats();
-  }, [pathname]);
-
   const handleCreateChat = async () => {
     try {
       const res = await fetch('/api/chats', {
@@ -91,31 +87,31 @@ export default function DashboardLayoutClient({
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0b0f17]">
+    <div className="gcp-shell flex h-screen w-screen overflow-hidden">
       {/* Sidebar Container */}
       <aside
-        className={`relative z-10 flex h-full flex-col border-r border-white/5 bg-[#0f1422] transition-all duration-300 ${
+        className={`gcp-sidebar relative z-10 flex h-full flex-col border-r transition-all duration-300 ${
           collapsed ? 'w-16' : 'w-72'
         }`}
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between overflow-hidden border-b border-white/5 px-4">
+        <div className="flex h-16 items-center justify-between overflow-hidden border-b border-[rgba(232,230,228,0.08)] px-4">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <Terminal className="text-blue-500" size={20} />
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-lg font-bold text-transparent">
-                gcp-computer
+              <Terminal className="text-[var(--color-lavender)]" size={20} />
+              <span className="text-lg font-medium tracking-tight text-[var(--color-pristine-white)]">
+                GCP Computer
               </span>
             </div>
           )}
           {collapsed && (
             <div className="flex w-full justify-center">
-              <Terminal className="text-blue-500" size={20} />
+              <Terminal className="text-[var(--color-lavender)]" size={20} />
             </div>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white"
+            className="gcp-btn-icon p-1.5 text-[rgba(255,255,255,0.68)] hover:text-[var(--color-pristine-white)]"
           >
             <Menu size={16} />
           </button>
@@ -124,7 +120,7 @@ export default function DashboardLayoutClient({
         {/* Action Button */}
         <button
           onClick={handleCreateChat}
-          className="mx-3 my-4 flex items-center justify-center gap-2 rounded-lg border border-dashed border-blue-500/30 bg-blue-500/5 p-2 font-medium text-gray-200 transition-all hover:border-blue-500 hover:bg-blue-500/10 hover:text-white"
+          className="mx-3 my-4 flex items-center justify-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[rgba(210,190,255,0.25)] bg-[rgba(210,190,255,0.06)] p-2 font-medium text-[rgba(255,255,255,0.9)] transition-all hover:border-[rgba(210,190,255,0.5)] hover:bg-[rgba(210,190,255,0.12)] hover:text-[var(--color-pristine-white)]"
         >
           <Plus size={16} />
           {!collapsed && <span>New Session</span>}
@@ -136,10 +132,10 @@ export default function DashboardLayoutClient({
             <Link
               key={chat.id}
               href={`/dashboard/chat/${chat.id}`}
-              className={`group flex items-center justify-between rounded-lg p-2.5 text-sm transition-all ${
+              className={`group flex items-center justify-between rounded-[var(--radius-md)] p-2.5 text-sm transition-all ${
                 activeChatId === chat.id
-                  ? 'border border-blue-500/20 bg-blue-500/10 text-white'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                  ? 'border border-[rgba(210,190,255,0.22)] bg-[rgba(210,190,255,0.09)] text-[var(--color-pristine-white)]'
+                  : 'text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.04)] hover:text-[var(--color-pristine-white)]'
               }`}
             >
               <div className="flex items-center gap-3 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -153,7 +149,7 @@ export default function DashboardLayoutClient({
               {!collapsed && (
                 <button
                   onClick={(e) => handleDeleteChat(chat.id, e)}
-                  className="rounded p-0.5 text-gray-500 opacity-0 transition-all group-hover:opacity-100 hover:text-red-400"
+                  className="rounded p-0.5 text-[rgba(255,255,255,0.46)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--color-danger)]"
                 >
                   <Trash2 size={13} />
                 </button>
@@ -163,13 +159,13 @@ export default function DashboardLayoutClient({
         </div>
 
         {/* Footer info & Logout */}
-        <div className="flex h-16 items-center justify-between overflow-hidden border-t border-white/5 p-3">
+        <div className="flex h-16 items-center justify-between overflow-hidden border-t border-[rgba(232,230,228,0.08)] p-3">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-xs font-bold text-white">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-lavender)] text-xs font-bold text-[var(--color-deep-black)]">
               {getInitials(userEmail)}
             </div>
             {!collapsed && (
-              <span className="overflow-hidden text-xs font-medium text-ellipsis whitespace-nowrap text-gray-300">
+              <span className="overflow-hidden text-xs font-medium text-ellipsis whitespace-nowrap text-[rgba(255,255,255,0.72)]">
                 {userEmail}
               </span>
             )}
@@ -177,7 +173,7 @@ export default function DashboardLayoutClient({
           {!collapsed && (
             <button
               onClick={() => signOut({ callbackUrl: '/' })}
-              className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white"
+              className="gcp-btn-icon p-1.5 text-[rgba(255,255,255,0.68)] hover:text-[var(--color-pristine-white)]"
               title="Log Out"
             >
               <LogOut size={16} />

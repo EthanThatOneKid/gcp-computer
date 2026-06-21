@@ -12,24 +12,29 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1b2640] via-[#0b0f17] to-[#0b0f17] px-4 py-12">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl">
-        <div className="space-y-2 text-center">
+    <main className="gcp-page flex min-h-screen items-center justify-center px-4 py-12">
+      <section className="gcp-card-light w-full max-w-md space-y-8 p-8 sm:p-10">
+        <div className="space-y-4 text-center">
           <div className="flex justify-center">
-            <div className="rounded-xl bg-blue-500/10 p-3 text-blue-400">
-              <Terminal size={36} />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-lavender)] text-[var(--color-deep-black)] shadow-[var(--shadow-ground)]">
+              <Terminal size={30} />
             </div>
           </div>
-          <h1 className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
-            gcp-computer
-          </h1>
-          <p className="text-sm text-gray-400">
-            Secure agentic execution environments on Google Cloud
-          </p>
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--color-terracotta)]">
+              GCP
+            </p>
+            <h1 className="text-3xl font-medium tracking-tight text-[var(--color-pure-black)]">
+              GCP Computer
+            </h1>
+            <p className="text-sm leading-6 text-[var(--color-medium-gray)]">
+              Secure agentic execution environments on Google Cloud.
+            </p>
+          </div>
         </div>
 
         <LoginForm />
-      </div>
+      </section>
     </main>
   );
 }

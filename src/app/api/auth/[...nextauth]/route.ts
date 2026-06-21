@@ -3,6 +3,12 @@ import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getDb } from '@/db/index';
 
+interface SessionUser {
+  id?: string;
+  email?: string | null;
+  image?: string | null;
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -12,7 +18,7 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'Developer Login (Mock)',
       credentials: {
-        email: { label: 'Email', type: 'email', placeholder: 'developer@gcp-computer.dev' },
+        email: { label: 'Email', type: 'email', placeholder: 'developer@gcp.dev' },
         name: { label: 'Name', type: 'text', placeholder: 'Developer' },
       },
       async authorize(credentials) {
@@ -89,8 +95,9 @@ export const authOptions: NextAuthOptions = {
             | undefined;
 
           if (dbUser && session.user) {
-            (session.user as any).id = dbUser.id;
-            session.user.image = dbUser.image;
+            const sessionUser = session.user as SessionUser;
+            sessionUser.id = dbUser.id;
+            sessionUser.image = dbUser.image;
           }
         } catch (error) {
           console.error('[Auth] Failed to fetch session user ID:', error);
