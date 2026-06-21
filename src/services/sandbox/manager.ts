@@ -126,7 +126,8 @@ class SandboxManager {
 
     if (!sandbox) {
       sandboxId = uuidv4();
-      console.log(`[SandboxManager] Provisioning new ${providerType} sandbox for chat ${chatId}`);
+      const displayProviderType = providerType === 'mock' ? 'local host' : providerType;
+      console.log(`[SandboxManager] Provisioning new ${displayProviderType} sandbox for chat ${chatId}`);
 
       // Update DB to provisioning immediately
       const connInfo = JSON.stringify({

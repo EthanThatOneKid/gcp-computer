@@ -22,17 +22,17 @@ export class MockSandboxProvider implements SandboxProvider {
     }
     this.statuses.set(id, 'running');
     this.mounts.set(id, []);
-    console.log(`[MockSandbox] Sandbox ${id} created at ${ws}`);
+    console.log(`[LocalSandbox] Sandbox ${id} created at ${ws}`);
   }
 
   async startSandbox(id: string): Promise<void> {
     this.statuses.set(id, 'running');
-    console.log(`[MockSandbox] Sandbox ${id} started`);
+    console.log(`[LocalSandbox] Sandbox ${id} started`);
   }
 
   async stopSandbox(id: string, force?: boolean): Promise<void> {
     this.statuses.set(id, 'stopped');
-    console.log(`[MockSandbox] Sandbox ${id} stopped`);
+    console.log(`[LocalSandbox] Sandbox ${id} stopped`);
   }
 
   async deleteSandbox(id: string): Promise<void> {
@@ -42,7 +42,7 @@ export class MockSandboxProvider implements SandboxProvider {
     if (fs.existsSync(ws)) {
       fs.rmSync(ws, { recursive: true, force: true });
     }
-    console.log(`[MockSandbox] Sandbox ${id} deleted`);
+    console.log(`[LocalSandbox] Sandbox ${id} deleted`);
   }
 
   async executeCommand(
@@ -57,7 +57,7 @@ export class MockSandboxProvider implements SandboxProvider {
       fs.mkdirSync(cwd, { recursive: true });
     }
 
-    console.log(`[MockSandbox] Executing: "${command}" in ${cwd}`);
+    console.log(`[LocalSandbox] Executing: "${command}" in ${cwd}`);
 
     try {
       const { stdout, stderr } = await execAsync(command, { cwd });
@@ -85,7 +85,7 @@ export class MockSandboxProvider implements SandboxProvider {
     }
 
     fs.writeFileSync(absolutePath, content, 'utf8');
-    console.log(`[MockSandbox] Wrote file ${filePath}`);
+    console.log(`[LocalSandbox] Wrote file ${filePath}`);
   }
 
   async readFile(id: string, filePath: string): Promise<string> {
@@ -118,7 +118,7 @@ export class MockSandboxProvider implements SandboxProvider {
     const currentMounts = this.mounts.get(id) || [];
     currentMounts.push({ hostPath, sandboxPath });
     this.mounts.set(id, currentMounts);
-    console.log(`[MockSandbox] Mounted ${hostPath} to ${sandboxPath}`);
+    console.log(`[LocalSandbox] Mounted ${hostPath} to ${sandboxPath}`);
   }
 
   async getSandboxStatus(id: string): Promise<'provisioning' | 'running' | 'stopped' | 'failed'> {

@@ -296,7 +296,7 @@ export default function SandboxStatusClient({ initialSandbox }: SandboxStatusCli
           <div className="grid grid-cols-2 gap-y-2 text-xs">
             <div className="text-[rgba(255,255,255,0.56)]">Provider</div>
             <div className="text-right font-medium capitalize text-[var(--color-pristine-white)]">
-              {sandbox.provider}
+              {sandbox.provider === 'mock' ? 'local host' : sandbox.provider}
             </div>
 
             <div className="text-[rgba(255,255,255,0.56)]">Instance ID</div>
