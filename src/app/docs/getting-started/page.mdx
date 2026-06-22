@@ -1,0 +1,89 @@
+# Getting Started
+
+Get GCP Computer running locally in minutes. This guide walks you through the prerequisites, installation, and first run.
+
+---
+
+## Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+- **Node.js v22+** and **npm**
+- **Docker** (optional — only needed for the Docker sandbox driver)
+- **Git**
+
+---
+
+## Step 1: Clone the Repository
+
+```bash
+git clone <repository-url>
+cd gcp-computer
+```
+
+---
+
+## Step 2: Install Dependencies
+
+```bash
+npm install
+```
+
+This installs Next.js, React, the Vercel AI SDK, Tailwind CSS, authentication libraries, and all other required packages.
+
+---
+
+## Step 3: Configure Environment Variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+For local development, configure your `.env` file with these minimum settings:
+
+```env
+APP_MODE=local-emulated
+NEXTAUTH_SECRET=a-secure-random-secret
+NEXTAUTH_URL=http://localhost:3000
+```
+
+| Variable | Description |
+|---|---|
+| `APP_MODE` | Set to `local-emulated` for local development |
+| `NEXTAUTH_SECRET` | Random string used to encrypt session tokens |
+| `NEXTAUTH_URL` | The base URL of your app |
+
+> When `APP_MODE=local-emulated` is set, the app runs in demo mode with credentials-based login, in-memory sandbox emulation, and deterministic agent fallback. No Google Cloud or Gemini API keys required.
+
+---
+
+## Step 4: Start the Development Server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## Step 5: Sign In
+
+The login page displays a **Local Emulation** badge and a credentials-based sign-in form. Enter any username and password to proceed.
+
+Once signed in, you land on the dashboard where you can:
+
+- Create new chat sessions
+- Execute commands in sandboxed environments
+- Mount directories
+- View tool execution logs
+
+---
+
+## What's Next?
+
+- [Installation guide](/docs/installation) — advanced configuration options
+- [Local development](/docs/development) — running with emulated sandboxes
+- [Deployment guide](/docs/deployment) — deploying to GCP

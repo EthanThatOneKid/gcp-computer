@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Sora } from 'next/font/google';
 import './globals.css';
 import AuthProvider from '@/components/SessionProvider';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -20,8 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={sora.variable}>
-      <body className="antialiased">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="flex min-h-screen flex-col antialiased">
+        <AuthProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -48,6 +48,7 @@ export default async function LoginPage() {
           showGoogleLogin={runtime.googleAuthEnabled}
           isLocalEmulation={runtime.isLocalEmulation}
         />
+
       </section>
     </main>
   );

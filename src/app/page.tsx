@@ -6,65 +6,14 @@ import {
   ArrowRight,
   Terminal,
   Cpu,
-  Shield,
   Clock,
   HardDrive,
-  RefreshCw,
-  Layers,
   ExternalLink,
   Check,
-  Play,
-  User,
   Sparkles,
   Globe,
   Database,
-  Lock,
-  Settings,
-  ChevronRight,
-  Flame,
-  ChevronLeft,
 } from 'lucide-react';
-
-// Google Cloud Logo SVG representation (GCP Hexagon style)
-const GCPLogo = ({ className = 'h-8 w-8' }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"
-      fill="currentColor"
-    />
-    <path d="M12 17l4-4h-3V9h-2v4H8l4 4z" fill="currentColor" opacity="0.8" />
-  </svg>
-);
-
-// GCP Hexagon Core Icon
-const GCPHexagon = ({ className = 'h-8 w-8' }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Blue segment */}
-    <path
-      d="M60 10L103.3 35V85L60 110L16.7 85V35L60 10Z"
-      stroke="url(#gcp-grad)"
-      strokeWidth="4"
-      fill="rgba(13, 13, 13, 0.8)"
-    />
-    <path
-      d="M60 20L94.6 40V80L60 100L25.4 80V40L60 20Z"
-      fill="url(#gcp-grad-inner)"
-      opacity="0.15"
-    />
-    <defs>
-      <linearGradient id="gcp-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4285F4" />
-        <stop offset="30%" stopColor="#EA4335" />
-        <stop offset="70%" stopColor="#FBBC05" />
-        <stop offset="100%" stopColor="#34A853" />
-      </linearGradient>
-      <linearGradient id="gcp-grad-inner" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#d2beff" />
-        <stop offset="100%" stopColor="#ef7759" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
 
 interface Testimony {
   name: string;
@@ -170,66 +119,13 @@ export default function PremiumLandingPage() {
   };
 
   return (
-    <main className="gcp-page gcp-mesh-grid relative min-h-screen overflow-x-hidden">
+    <div className="gcp-page gcp-mesh-grid relative min-h-screen overflow-x-hidden">
       {/* Background Decorative Ethereal Gradients in GCP Brand Likeness */}
       <div className="animate-pulse-glow pointer-events-none absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full bg-radial from-[rgba(66,133,244,0.08)] to-transparent blur-[120px] filter" />
       <div className="pointer-events-none absolute top-[20%] right-[-10%] h-[60%] w-[60%] rounded-full bg-radial from-[rgba(210,190,255,0.06)] to-transparent blur-[150px] filter" />
       <div className="pointer-events-none absolute bottom-[10%] left-[10%] h-[50%] w-[50%] rounded-full bg-radial from-[rgba(239,119,89,0.05)] to-transparent blur-[130px] filter" />
 
-      {/* STICKY HEADER */}
-      <header className="sticky top-0 z-[100] w-full border-b border-[rgba(232,230,228,0.08)] bg-[rgba(13,13,13,0.8)] backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <GCPHexagon className="animate-float h-9 w-9" />
-            <span className="text-lg font-medium tracking-tight text-[var(--color-pristine-white)]">
-              GCP <span className="text-[var(--color-lavender)]">Computer</span>
-            </span>
-          </div>
 
-          <nav className="hidden items-center gap-6 md:flex">
-            <a
-              href="#features"
-              className="text-xs font-semibold tracking-wider text-[var(--color-pristine-white)] uppercase opacity-60 transition-opacity hover:opacity-100"
-            >
-              Features
-            </a>
-            <a
-              href="#demo"
-              className="text-xs font-semibold tracking-wider text-[var(--color-pristine-white)] uppercase opacity-60 transition-opacity hover:opacity-100"
-            >
-              Interactive Demo
-            </a>
-            <a
-              href="#architecture"
-              className="text-xs font-semibold tracking-wider text-[var(--color-pristine-white)] uppercase opacity-60 transition-opacity hover:opacity-100"
-            >
-              Architecture
-            </a>
-            <a
-              href="#testimonials"
-              className="text-xs font-semibold tracking-wider text-[var(--color-pristine-white)] uppercase opacity-60 transition-opacity hover:opacity-100"
-            >
-              Stories
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="inline-flex h-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] px-4 text-xs font-semibold text-[var(--color-pristine-white)] transition-colors hover:bg-[rgba(255,255,255,0.1)]"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-9 items-center justify-center rounded-full bg-[var(--color-lavender)] px-4 text-xs font-semibold text-[var(--color-deep-black)] transition-all hover:bg-[var(--color-lavender-hover)] active:scale-[0.98]"
-            >
-              <span>Get Started</span>
-              <ArrowRight size={14} className="ml-1" />
-            </Link>
-          </div>
-        </div>
-      </header>
 
       {/* HERO SECTION */}
       <section className="relative mx-auto max-w-7xl px-6 pt-16 pb-24 text-center sm:pt-24 sm:pb-32">
@@ -721,36 +617,7 @@ NEXTAUTH_URL=http://localhost:3000`}
         </div>
       </section>
 
-      {/* BRONZE/SILVER SPONSOR FOOTER */}
-      <footer className="border-t border-[rgba(232,230,228,0.06)] bg-[rgba(10,10,10,0.9)] py-12 text-xs text-[rgba(255,255,255,0.45)]">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <GCPHexagon className="h-5 w-5 opacity-60" />
-            <span>GCP Computer &copy; 2026. Built for Google I/O Extended GDG Newport Beach.</span>
-          </div>
 
-          <div className="flex gap-4">
-            <a
-              href="https://about.google/brand-resource-center/guidance/"
-              target="_blank"
-              rel="noreferrer"
-              className="transition-colors hover:text-white"
-            >
-              GCP Brand Guidance
-            </a>
-            <span>&middot;</span>
-            <a
-              href="https://github.com/EthanThatOneKid/gcp-computer"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1 transition-colors hover:text-white"
-            >
-              GitHub Repo
-              <ExternalLink size={12} />
-            </a>
-          </div>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }

@@ -1,0 +1,106 @@
+# Deployment
+
+Deploy GCP Computer to Google Cloud Platform. The primary deployment path uses GCP Compute Engine with GitHub Actions CI/CD.
+
+---
+
+## Deployment Options
+
+- **GCP Compute Engine** (primary) — full production path with VM-based sandboxing
+- **Google Cloud Run** — serverless container deployment (legacy)
+- **Vercel** — frontend-only deployment
+
+---
+
+## Prerequisites
+
+1. A [Google Cloud Platform](https://console.cloud.google.com/) project
+2. Enabled APIs:
+   - Compute Engine API (`compute.googleapis.com`)
+   - Cloud Run API (`run.googleapis.com`) — for Cloud Run path
+   - Artifact Registry API (`artifactregistry.googleapis.com`)
+3. A service account with appropriate permissions
+
+---
+
+## GCP Deployment
+
+### 1. Provision Infrastructure
+
+Run the provisioning script to set up the GCP project:
+
+```bash
+powershell -File scripts/gcp-provision.ps1
+```
+
+This script automates the creation of the service account, enables APIs, and sets up networking.
+
+### 2. Configure Secrets
+
+Add the following secrets to your GitHub repository (Settings > Secrets and variables > Actions):
+
+| Secret | Description |
+|---|---|
+| `GCP_SA_KEY` | Full content of the service account JSON key |
+| `GCP_PROJECT_ID` | Your GCP project ID |
+| `NEXTAUTH_SECRET` | Random secret for session signing |
+| `NEXTAUTH_URL` | Deployed app URL |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini API key |
+
+### 3. Deploy
+
+Push to the `main` branch. The [GitHub Actions workflow](https://github.com/features/actions) automatically builds and deploys:
+
+```bash
+git push origin main
+```
+
+The deployment workflow:
+1. Checks out the repository
+2. Authenticates with GCP
+3. Builds the Docker image using the multi-stage `Dockerfile`
+4. Pushes the image to Artifact Registry
+5. Updates the Compute Engine VM or Cloud Run service
+
+---
+
+## VM Setup (Compute Engine)
+
+Use the VM setup script to configure a fresh Compute Engine instance:
+
+```bash
+bash scripts/vm-setup.sh
+```
+
+This script:
+- Installs Docker and dependencies
+- Clones the repository
+- Configures environment variables
+- Sets up Caddy as a reverse proxy
+- Starts the application
+
+---
+
+## Persistent Database
+
+Cloud Run is stateless. For production, use a managed PostgreSQL database:
+
+### Option A: Cloud SQL
+
+Set up [Google Cloud SQL](https://cloud.google.com/sql) for PostgreSQL and configure `DATABASE_URL`.
+
+### Option B: External Provider
+
+Use [Supabase](https://supabase.com/), [Neon](https://neon.tech/), or [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres).
+
+---
+
+## Health Checks
+
+After deployment, verify:
+
+- Login page loads
+- Authentication works
+- Sandboxes can be created
+- Commands execute successfully
+- Sessions persist across page reloads

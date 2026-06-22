@@ -1,0 +1,97 @@
+import { Terminal, Cloud, Cpu, Lock, Zap, BookOpen } from 'lucide-react';
+
+# GCP Computer Documentation
+
+A unified, secure, lightning-fast sandboxing platform for AI coding agents. Provision isolated workspaces in milliseconds, allowing agents to execute shell commands, edit files, and mount host directories safely.
+
+<div className="not-prose my-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+<div className="gcp-card-dark rounded-lg p-5">
+  <Zap size={20} className="mb-3 text-[var(--color-lavender)]" />
+  <h3 className="mb-1 text-sm font-semibold">Lightning Fast</h3>
+  <p className="text-sm text-white/60">Provision sandboxes in milliseconds, not minutes.</p>
+</div>
+
+<div className="gcp-card-dark rounded-lg p-5">
+  <Lock size={20} className="mb-3 text-[var(--color-lavender)]" />
+  <h3 className="mb-1 text-sm font-semibold">Secure by Default</h3>
+  <p className="text-sm text-white/60">Isolated environments for every agent session.</p>
+</div>
+
+<div className="gcp-card-dark rounded-lg p-5">
+  <Cloud size={20} className="mb-3 text-[var(--color-lavender)]" />
+  <h3 className="mb-1 text-sm font-semibold">GCP Native</h3>
+  <p className="text-sm text-white/60">Runs on Google Cloud Compute Engine.</p>
+</div>
+
+<div className="gcp-card-dark rounded-lg p-5">
+  <Cpu size={20} className="mb-3 text-[var(--color-lavender)]" />
+  <h3 className="mb-1 text-sm font-semibold">Multiple Drivers</h3>
+  <p className="text-sm text-white/60">Docker, GCP VMs, or local emulation.</p>
+</div>
+
+<div className="gcp-card-dark rounded-lg p-5">
+  <Terminal size={20} className="mb-3 text-[var(--color-lavender)]" />
+  <h3 className="mb-1 text-sm font-semibold">Agent-Ready</h3>
+  <p className="text-sm text-white/60">Built for AI agents with full tool execution.</p>
+</div>
+
+<div className="gcp-card-dark rounded-lg p-5">
+  <BookOpen size={20} className="mb-3 text-[var(--color-lavender)]" />
+  <h3 className="mb-1 text-sm font-semibold">Open Source</h3>
+  <p className="text-sm text-white/60">Built for the GDG Newport Beach Hackathon.</p>
+</div>
+
+</div>
+
+## Quick Start
+
+Get GCP Computer running locally in under 5 minutes:
+
+1. **Clone the repo** and install dependencies with `npm install`
+2. **Copy `.env.example` to `.env`** and set `APP_MODE=local-emulated`
+3. **Start the dev server** with `npm run dev`
+4. **Open http://localhost:3000** and sign in
+
+For detailed instructions, head to the [Getting Started](/docs/getting-started) guide.
+
+---
+
+## Architecture Overview
+
+```mermaid
+graph TD
+    A[Next.js Frontend] -->|API & SSE| B[API Route Handlers]
+    B -->|NextAuth / Postgres| C[(Postgres DB)]
+    B -->|EVE Agent Core| D[Agent Tool Executor]
+    D -->|Sandbox Manager| E[Sandbox Drivers]
+    E -->|Docker| F[Docker Containers]
+    E -->|GCP| G[Compute Engine VMs]
+    E -->|Mock| H[Local Subprocesses]
+```
+
+## Navigation
+
+<div className="not-prose my-8 grid gap-3 sm:grid-cols-2">
+
+<a href="/docs/getting-started" className="gcp-card-dark group rounded-lg p-5 transition-all hover:border-[var(--color-lavender)]/30">
+  <span className="text-sm font-semibold text-[var(--color-lavender)]">Getting Started &rarr;</span>
+  <p className="mt-1 text-sm text-white/60">Set up GCP Computer from scratch.</p>
+</a>
+
+<a href="/docs/installation" className="gcp-card-dark group rounded-lg p-5 transition-all hover:border-[var(--color-lavender)]/30">
+  <span className="text-sm font-semibold text-[var(--color-lavender)]">Installation &rarr;</span>
+  <p className="mt-1 text-sm text-white/60">Detailed install options and environment config.</p>
+</a>
+
+<a href="/docs/development" className="gcp-card-dark group rounded-lg p-5 transition-all hover:border-[var(--color-lavender)]/30">
+  <span className="text-sm font-semibold text-[var(--color-lavender)]">Local Development &rarr;</span>
+  <p className="mt-1 text-sm text-white/60">Run with emulated sandboxes for offline demo.</p>
+</a>
+
+<a href="/docs/deployment" className="gcp-card-dark group rounded-lg p-5 transition-all hover:border-[var(--color-lavender)]/30">
+  <span className="text-sm font-semibold text-[var(--color-lavender)]">Deployment &rarr;</span>
+  <p className="mt-1 text-sm text-white/60">Deploy to Google Cloud Platform.</p>
+</a>
+
+</div>

@@ -1,0 +1,64 @@
+# Local Development
+
+Run GCP Computer locally with emulated sandboxes for development, testing, and demos — no cloud infrastructure required.
+
+---
+
+## Emulation Mode
+
+Set `APP_MODE=local-emulated` in your `.env` file to enable the local development path. This mode:
+
+- Hides Google login — credentials-based login only
+- Runs sandboxes in an in-memory emulator instead of Docker or GCP
+- Falls back to a deterministic demo response when Gemini is unavailable
+- Displays a **Local Emulation** badge on the login page
+
+---
+
+## Verification Checklist
+
+Use this checklist to confirm everything works after starting the dev server:
+
+1. Open `http://localhost:3000`
+2. Confirm the login page shows a **Local Emulation** badge
+3. Sign in with credentials auth
+4. Create a new chat session
+5. Send a prompt that triggers a command execution
+6. Send a prompt that writes and reads a file
+7. Send a prompt that mounts a directory
+8. Reload the page and confirm the chat and sandbox still load
+9. Sign out and confirm you return to the login page
+
+### Pass Criteria
+
+- Login works without Google credentials
+- Sandbox commands run inside the emulator, not on the host OS
+- Agent responses render without Gemini
+- Tool logs appear in the chat UI
+- The demo can be repeated after a page refresh
+
+---
+
+## Development Scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the Next.js development server |
+| `npm run build` | Build for production |
+| `npm run lint` | Run ESLint |
+| `npx prettier --check .` | Check code formatting |
+
+---
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js App Router pages and API routes
+├── components/       # React components
+├── config/           # Runtime configuration
+├── db/               # Database layer and migrations
+├── services/
+│   └── sandbox/      # Sandbox drivers (Docker, GCP, Emulated)
+└── auth.ts           # NextAuth configuration
+```

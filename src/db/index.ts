@@ -22,13 +22,17 @@ function createPool() {
     return pool;
   }
 
-  const connectionString = getDatabaseUrl();
+  let connectionString = getDatabaseUrl();
   const hostname = new URL(connectionString).hostname;
   const useSsl = !['localhost', '127.0.0.1', '::1'].includes(hostname);
 
+  if (useSsl && !connectionString.includes('sslmode=')) {
+    connectionString +=
+      (connectionString.includes('?') ? '&' : '?') + 'sslmode=verify-full';
+  }
+
   pool = new Pool({
     connectionString,
-    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
   });
 
   return pool;

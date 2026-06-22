@@ -1,0 +1,89 @@
+# Installation
+
+Detailed installation instructions for GCP Computer, including environment configuration and optional dependencies.
+
+---
+
+## Environment Variables
+
+All configuration is driven by environment variables. Copy `.env.example` and customize:
+
+### Core Settings
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `APP_MODE` | Yes | `prod` | `prod` for production, `local-emulated` for local demo |
+| `NEXTAUTH_SECRET` | Yes | — | Random secret for session encryption |
+| `NEXTAUTH_URL` | Yes | — | Public URL of your deployed app |
+
+### Authentication
+
+| Variable | Required | Description |
+|---|---|---|
+| `GOOGLE_CLIENT_ID` | For Google login | OAuth client ID from GCP Console |
+| `GOOGLE_CLIENT_SECRET` | For Google login | OAuth client secret from GCP Console |
+
+### Google AI / Gemini
+
+| Variable | Required | Description |
+|---|---|---|
+| `GOOGLE_GENERATIVE_AI_API_KEY` | For agent AI | Gemini API key for agent responses |
+
+### Google Cloud Platform
+
+| Variable | Required | Description |
+|---|---|---|
+| `GCP_PROJECT_ID` | For GCP sandbox driver | Your GCP project ID |
+| `GCP_SERVICE_ACCOUNT_EMAIL` | For GCP sandbox driver | Service account email |
+| `GCP_PRIVATE_KEY` | For GCP sandbox driver | Private key for service account |
+
+---
+
+## Sandbox Drivers
+
+GCP Computer supports three sandbox drivers. The driver is selected automatically based on the environment configuration.
+
+### Docker Driver
+
+The Docker driver spawns lightweight Alpine containers for each session. It handles dynamic mount requests.
+
+Prerequisites:
+- Docker installed and running
+- User has permission to run Docker commands
+
+### GCP Compute Engine Driver
+
+The GCP driver provisions and manages Compute Engine VM instances. Used in production deployment.
+
+Prerequisites:
+- A GCP project with Compute Engine API enabled
+- Service account with Compute Instance Admin permissions
+- Service account key configured in environment
+
+### Mock Driver (Emulated)
+
+The mock driver runs commands in a local subprocess space as a fallback. Used when `APP_MODE=local-emulated` is set.
+
+No additional dependencies required.
+
+---
+
+## Database
+
+By default, GCP Computer uses a local SQLite database (`database.db`). For production, migration to PostgreSQL is recommended.
+
+### SQLite (Local)
+
+- File: `database.db` in the project root
+- Auto-created on first run
+- Ephemeral — recreated on each deploy
+
+### PostgreSQL (Production)
+
+Configure your database URL in the environment:
+
+```env
+DATABASE_URL=postgres://user:password@host/db
+```
+
+The database schema is defined in `src/db/schema.sql`.
