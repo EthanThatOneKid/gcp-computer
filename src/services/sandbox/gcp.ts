@@ -1,4 +1,4 @@
-import { InstancesClient } from '@google-cloud/compute';
+import { InstancesClient, ZoneOperationsClient } from '@google-cloud/compute';
 import { SandboxProvider, RunCommandResult, SandboxMount } from './provider';
 
 // GCP Credentials should be configured in Environment variables
@@ -202,7 +202,9 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     });
 
     console.log(`[GCP Sandbox] Creation operation queued. Wait for start...`);
-    await operation.promise();
+    if (operation.name) {
+      await this.waitZoneOperation(operation.name);
+    }
     console.log(`[GCP Sandbox] VM instance ${instanceName} successfully created.`);
   }
 
@@ -216,7 +218,9 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
       zone,
       instance: instanceName,
     });
-    await operation.promise();
+    if (operation.name) {
+      await this.waitZoneOperation(operation.name);
+    }
   }
 
   async stopSandbox(id: string): Promise<void> {
@@ -229,7 +233,9 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
       zone,
       instance: instanceName,
     });
-    await operation.promise();
+    if (operation.name) {
+      await this.waitZoneOperation(operation.name);
+    }
     this.cacheIp.delete(id);
     this.readySandboxes.delete(id);
   }
@@ -244,7 +250,9 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
       zone,
       instance: instanceName,
     });
-    await operation.promise();
+    if (operation.name) {
+      await this.waitZoneOperation(operation.name);
+    }
     this.mounts.delete(id);
     this.cacheIp.delete(id);
     this.readySandboxes.delete(id);
@@ -351,6 +359,27 @@ export class GCPComputeSandboxProvider implements SandboxProvider {
     } catch {
       return 'stopped';
     }
+  }
+
+  private async waitZoneOperation(operationName: string) {
+    const operationsClient = new ZoneOperationsClient();
+    let retries = 60; // 60 * 2s = 120s (2 minutes)
+    while (retries > 0) {
+      const [op] = await operationsClient.get({
+        project,
+        zone,
+        operation: operationName,
+      });
+      if (op.status === 'DONE') {
+        if (op.error) {
+          throw new Error(`GCP Operation failed: ${JSON.stringify(op.error)}`);
+        }
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      retries--;
+    }
+    throw new Error('GCP Operation timed out.');
   }
 
   getMounts(id: string): SandboxMount[] {
