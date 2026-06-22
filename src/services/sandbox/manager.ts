@@ -167,14 +167,15 @@ class SandboxManager {
           .prepare(`UPDATE sandbox_instances SET status = 'failed' WHERE id = ?`)
           .run(sandboxId);
         console.error(`[SandboxManager] startSandbox failed for ${sandboxId}:`, err);
-        throw err;
       }
     };
 
     if (wait) {
       await doStart();
     } else {
-      void doStart();
+      doStart().catch((err) =>
+        console.error(`[SandboxManager] Background startSandbox failed:`, err),
+      );
     }
   }
 
